@@ -1,0 +1,42 @@
+{
+  "name": "MpcOptimize",
+  "includes": ["MpcComputeCost.hpp", "ClampValue.hpp", "FuncModule.hpp", "waypointFollowTypes/waypointFollowTypes.hpp"],
+  "ports": {
+    "Input": [
+      "VehicleState initialState;",
+      "FittedTrajectory trajectory;",
+      "ControlInput warmStartSequence[MAX_CONTROL_HORIZON];",
+      "ControlInput prevAppliedControl;"
+    ],
+    "Output": [
+      "ControlInput optimalSequence[MAX_CONTROL_HORIZON];",
+      "Real finalCost = 0.0;"
+    ],
+    "Param": [
+      "MpcParam mpcParam;"
+    ],
+    "State": [],
+    "Sub": [
+      "MpcComputeCost computeCost;",
+      "ClampValue clampVal;"
+    ]
+  },
+  "execution_sequence": [
+    {
+      "node": "computeCost",
+      "type": "MpcComputeCost",
+      "inputs": {"controlSequence": "controls", "initialState": "input.initialState", "trajectory": "input.trajectory", "prevAppliedControl": "input.prevAppliedControl"},
+      "loop": "iter in [0, maxOptIterations), gradient evaluation"
+    },
+    {
+      "node": "clampVal",
+      "type": "ClampValue",
+      "inputs": {"value": "candidate", "minVal": "lowerBound", "maxVal": "upperBound"},
+      "loop": "per control variable clamping"
+    }
+  ],
+  "outputs": {
+    "optimalSequence": "controls",
+    "finalCost": "currentCost"
+  }
+}

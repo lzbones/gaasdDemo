@@ -1,0 +1,73 @@
+{
+  "name": "ComputeObstacleAffineConstraint",
+  "includes": [
+    "FuncModule.hpp",
+    "ComputeBarrierSquared.hpp",
+    "ComputeBarrierFirstDerivative.hpp",
+    "ComputeBarrierSecondDerivativeFree.hpp"
+  ],
+  "ports": {
+    "Input": [
+      "double egoVelocity = 0.0;",
+      "double dxEgo = 0.0;",
+      "double dyEgo = 0.0;",
+      "double vRxEgo = 0.0;",
+      "double vRyEgo = 0.0;",
+      "double axObEgo = 0.0;",
+      "double ayObEgo = 0.0;"
+    ],
+    "Output": [
+      "double betaA = 0.0;",
+      "double betaT = 0.0;",
+      "double bound = 0.0;"
+    ],
+    "Param": [
+      "double wheelBase = 2.7;",
+      "double alpha1 = 1.5;",
+      "double alpha2 = 1.5;"
+    ],
+    "State": [],
+    "Sub": [
+      "ComputeBarrierSquared barrierB;",
+      "ComputeBarrierFirstDerivative barrierDot;",
+      "ComputeBarrierSecondDerivativeFree barrierDdotFree;"
+    ]
+  },
+  "execution_sequence": [
+    {
+      "node": "barrierB",
+      "type": "ComputeBarrierSquared",
+      "inputs": {
+        "dxEgo": "input.dxEgo",
+        "dyEgo": "input.dyEgo"
+      }
+    },
+    {
+      "node": "barrierDot",
+      "type": "ComputeBarrierFirstDerivative",
+      "inputs": {
+        "dxEgo": "input.dxEgo",
+        "dyEgo": "input.dyEgo",
+        "vRxEgo": "input.vRxEgo",
+        "vRyEgo": "input.vRyEgo"
+      }
+    },
+    {
+      "node": "barrierDdotFree",
+      "type": "ComputeBarrierSecondDerivativeFree",
+      "inputs": {
+        "dxEgo": "input.dxEgo",
+        "dyEgo": "input.dyEgo",
+        "vRxEgo": "input.vRxEgo",
+        "vRyEgo": "input.vRyEgo",
+        "axObEgo": "input.axObEgo",
+        "ayObEgo": "input.ayObEgo"
+      }
+    }
+  ],
+  "outputs": {
+    "betaA": "-2 * input.dxEgo",
+    "betaT": "-2 * (input.egoVelocity^2 / param.wheelBase) * input.dyEgo",
+    "bound": "-(ddOut.barrierDdotFree + (alpha1+alpha2)*dotOut.barrierDot + alpha1*alpha2*bOut.barrier)"
+  }
+}

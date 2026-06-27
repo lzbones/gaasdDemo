@@ -1,0 +1,40 @@
+═══════════════════════════════════════
+  WaypointFollow 项目 FuncModule 架构整体验证报告
+═══════════════════════════════════════
+验证依据：MbdRefactor/04_mbd_refactor.md - MBD FuncModule 架构重构规范
+验证日期：2026-06-26
+
+【模块清单与分类】
+元件 (Element, 叶子节点, Sub 为空):
+  [✓] ClampValue          — 数值限幅截断
+  [✓] NormalizeAngle       — 角度归一化
+  [✓] EvaluatePolynomial   — 多项式求值
+  [✓] EvaluatePolynomialSlope — 多项式斜率求值
+  [✓] PredictBicycleState  — 运动学自行车模型
+  [✓] FitCubicPolynomial   — 三次多项式拟合
+
+组件 (Component, 含 Sub):
+  [✓] FitWaypointTrajectory  → Sub: FitCubicPolynomial
+  [✓] MpcComputeCost         → Sub: PredictBicycleState, EvaluatePolynomial, EvaluatePolynomialSlope, NormalizeAngle
+  [✓] MpcOptimize            → Sub: MpcComputeCost, ClampValue
+  [✓] WaypointFollow         → Sub: FitWaypointTrajectory, MpcOptimize, ClampValue
+
+【全局规范检查】
+[✓] 一类一文件原则: 每个类独立 .hpp + .cpp
+[✓] FuncModule 模板基类: include/mbd/FuncModule.hpp 定义完备
+[✓] 公用头文件: 复用 include/cpp/waypointFollowTypes/waypointFollowTypes.hpp
+[✓] 物理目录结构: include/mbd/, src/mbd/, models/
+[✓] 命名规范: UpperCamelCase 类名, XxxxTraits 特征类型
+[✓] C++20 标准: CMakeLists.txt 设置 CMAKE_CXX_STANDARD 20
+[✓] namespace: waypoint_follow_mbd 统一命名空间
+[✓] 值语义: 所有 Sub 使用值类型, 无指针/引用
+[✓] 先配置后移动: 测试代码严格遵守 setParam/setState → std::move 顺序
+
+【JSON 拓扑蓝图检查】
+[✓] models/FitWaypointTrajectory.json  → execution_sequence 与 run() 一致
+[✓] models/MpcComputeCost.json         → execution_sequence 与 run() 一致
+[✓] models/MpcOptimize.json            → execution_sequence 与 run() 一致
+[✓] models/WaypointFollow.json         → execution_sequence 与 run() 一致
+
+验证结论：✓ 通过
+═══════════════════════════════════════

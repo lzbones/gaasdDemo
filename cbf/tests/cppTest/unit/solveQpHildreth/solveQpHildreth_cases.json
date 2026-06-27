@@ -1,0 +1,30 @@
+{
+  "function_name": "solveQpHildreth",
+  "description": "Hildreth QP 求解器测试，覆盖无约束/上界/下界三种典型场景",
+  "test_cases": [
+    {
+      "id": "TC1_unconstrained",
+      "desc": "无约束最优解 (-Qd^-1 c)",
+      "expected_u": [
+        2.0,
+        1.0
+      ]
+    },
+    {
+      "id": "TC2_clip_top",
+      "desc": "约束 a<=1 → a=1, t=1",
+      "expected_u": [
+        1.0,
+        1.0
+      ]
+    },
+    {
+      "id": "TC3_clip_bottom",
+      "desc": "约束 a>=3 → a=3, t=1",
+      "expected_u": [
+        3.0,
+        1.0
+      ]
+    }
+  ]
+}

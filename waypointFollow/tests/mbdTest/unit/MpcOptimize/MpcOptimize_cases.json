@@ -1,0 +1,12 @@
+{
+  "module_name": "MpcOptimize",
+  "traits_type": "MpcOptimizeTraits",
+  "description": "MpcOptimize component integration tests",
+  "test_cases": [
+    {
+      "id": "MO_TC001",
+      "description": "Straight trajectory should produce near-zero steering",
+      "note": "Tested as part of WaypointFollow closed-loop test"
+    }
+  ]
+}

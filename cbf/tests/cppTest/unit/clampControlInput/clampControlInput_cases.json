@@ -1,0 +1,42 @@
+{
+  "function_name": "clampControlInput",
+  "description": "控制输入双通道限幅测试",
+  "test_cases": [
+    {
+      "id": "TC001_in_range",
+      "aRaw": 1.0,
+      "dfRaw": 0.1,
+      "aMin": -7.0,
+      "aMax": 7.0,
+      "dfMin": -0.5,
+      "dfMax": 0.5,
+      "aExp": 1.0,
+      "dfExp": 0.1,
+      "tolerance": 1e-12
+    },
+    {
+      "id": "TC002_above_max",
+      "aRaw": 12.0,
+      "dfRaw": 1.0,
+      "aMin": -7.0,
+      "aMax": 7.0,
+      "dfMin": -0.5,
+      "dfMax": 0.5,
+      "aExp": 7.0,
+      "dfExp": 0.5,
+      "tolerance": 1e-12
+    },
+    {
+      "id": "TC003_below_min",
+      "aRaw": -10.0,
+      "dfRaw": -1.0,
+      "aMin": -7.0,
+      "aMax": 7.0,
+      "dfMin": -0.5,
+      "dfMax": 0.5,
+      "aExp": -7.0,
+      "dfExp": -0.5,
+      "tolerance": 1e-12
+    }
+  ]
+}

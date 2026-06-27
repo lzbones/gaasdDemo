@@ -1,0 +1,58 @@
+{
+  "module_name": "ClampControlInput",
+  "traits_type": "ClampControlInputTraits",
+  "description": "ClampControlInput Traits 级单元测试用例",
+  "test_cases": [
+    {
+      "id": "TC1_above_max",
+      "param": {
+        "aMin": -7,
+        "aMax": 7,
+        "deltaFMin": -0.5,
+        "deltaFMax": 0.5
+      },
+      "input": {
+        "aRaw": 15,
+        "deltaFRaw": 1
+      },
+      "expected_output": {
+        "aFinal": 7,
+        "deltaFFinal": 0.5
+      }
+    },
+    {
+      "id": "TC2_below_min",
+      "param": {
+        "aMin": -7,
+        "aMax": 7,
+        "deltaFMin": -0.5,
+        "deltaFMax": 0.5
+      },
+      "input": {
+        "aRaw": -10,
+        "deltaFRaw": -1
+      },
+      "expected_output": {
+        "aFinal": -7,
+        "deltaFFinal": -0.5
+      }
+    },
+    {
+      "id": "TC3_inside",
+      "param": {
+        "aMin": -7,
+        "aMax": 7,
+        "deltaFMin": -0.5,
+        "deltaFMax": 0.5
+      },
+      "input": {
+        "aRaw": 1.5,
+        "deltaFRaw": 0.1
+      },
+      "expected_output": {
+        "aFinal": 1.5,
+        "deltaFFinal": 0.1
+      }
+    }
+  ]
+}

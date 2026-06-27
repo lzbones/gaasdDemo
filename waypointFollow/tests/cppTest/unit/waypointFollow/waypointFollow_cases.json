@@ -1,0 +1,97 @@
+{
+  "function_name": "waypointFollow",
+  "description": "路点跟踪MPC控制器集成测试用例集",
+  "test_cases": [
+    {
+      "id": "TC001_straight",
+      "description": "直线行驶: 路点沿X轴等距分布, 期望转向角接近零",
+      "input": {
+        "egoSpeed": 20.0,
+        "currentSteeringWheelAngle": 0.0,
+        "waypoints": [
+          {"x": 10.0, "y": 0.0},
+          {"x": 20.0, "y": 0.0},
+          {"x": 30.0, "y": 0.0},
+          {"x": 40.0, "y": 0.0},
+          {"x": 50.0, "y": 0.0},
+          {"x": 60.0, "y": 0.0}
+        ]
+      },
+      "expected_output": {
+        "steeringWheelAngle_near_zero": true,
+        "steer_tolerance": 0.05
+      }
+    },
+    {
+      "id": "TC002_left_curve",
+      "description": "左弯道: 路点向左偏移, 期望产生正转向角",
+      "input": {
+        "egoSpeed": 15.0,
+        "currentSteeringWheelAngle": 0.0,
+        "waypoints": [
+          {"x": 7.5,  "y": 0.2},
+          {"x": 15.0, "y": 0.8},
+          {"x": 22.5, "y": 1.8},
+          {"x": 30.0, "y": 3.2},
+          {"x": 37.5, "y": 5.0},
+          {"x": 45.0, "y": 7.2}
+        ]
+      },
+      "expected_output": {
+        "steeringWheelAngle_positive": true
+      }
+    },
+    {
+      "id": "TC003_right_curve",
+      "description": "右弯道: 路点向右偏移, 期望产生负转向角",
+      "input": {
+        "egoSpeed": 15.0,
+        "currentSteeringWheelAngle": 0.0,
+        "waypoints": [
+          {"x": 7.5,  "y": -0.2},
+          {"x": 15.0, "y": -0.8},
+          {"x": 22.5, "y": -1.8},
+          {"x": 30.0, "y": -3.2},
+          {"x": 37.5, "y": -5.0},
+          {"x": 45.0, "y": -7.2}
+        ]
+      },
+      "expected_output": {
+        "steeringWheelAngle_negative": true
+      }
+    },
+    {
+      "id": "TC004_low_speed",
+      "description": "低速保护: 车速0.3m/s低于阈值, 期望保持当前方向盘转角",
+      "input": {
+        "egoSpeed": 0.3,
+        "currentSteeringWheelAngle": 0.1,
+        "waypoints": [
+          {"x": 0.1, "y": 0.0},
+          {"x": 0.2, "y": 0.0},
+          {"x": 0.3, "y": 0.0},
+          {"x": 0.4, "y": 0.0},
+          {"x": 0.5, "y": 0.0},
+          {"x": 0.6, "y": 0.0}
+        ]
+      },
+      "expected_output": {
+        "steeringWheelAngle_equals_current": true,
+        "tolerance": 0.001
+      }
+    },
+    {
+      "id": "TC005_closed_loop",
+      "description": "多步闭环仿真: 跟踪半径100m圆弧, 期望最大横向误差<3m",
+      "input": {
+        "scenario": "circular_arc",
+        "radius_m": 100.0,
+        "speed_mps": 10.0,
+        "num_steps": 50
+      },
+      "expected_output": {
+        "max_lateral_error_m": 3.0
+      }
+    }
+  ]
+}

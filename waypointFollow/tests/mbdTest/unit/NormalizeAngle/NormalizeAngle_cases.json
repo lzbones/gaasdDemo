@@ -1,0 +1,12 @@
+{
+  "module_name": "NormalizeAngle",
+  "traits_type": "NormalizeAngleTraits",
+  "description": "NormalizeAngle element unit tests",
+  "test_cases": [
+    {"id": "NA_TC001", "description": "Zero angle", "input": {"angle": 0.0}, "expected_output": {"result": 0.0}, "tolerance": 1e-12},
+    {"id": "NA_TC002", "description": "Positive 2PI wrap", "input": {"angle": 7.28318}, "expected_output": {"result": 1.0}, "tolerance": 0.01},
+    {"id": "NA_TC003", "description": "Negative 2PI wrap", "input": {"angle": -7.28318}, "expected_output": {"result": -1.0}, "tolerance": 0.01},
+    {"id": "NA_TC004", "description": "PI boundary", "input": {"angle": 3.14159265}, "expected_output": {"result": 3.14159265}, "tolerance": 1e-6},
+    {"id": "NA_TC005", "description": "Small negative", "input": {"angle": -0.5}, "expected_output": {"result": -0.5}, "tolerance": 1e-12}
+  ]
+}

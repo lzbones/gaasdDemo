@@ -1,0 +1,36 @@
+═══════════════════════════════════════
+  WaypointFollow FuncModule 架构验证报告
+═══════════════════════════════════════
+验证依据：MbdRefactor/04_mbd_refactor.md
+模块类型：组件 (Component)
+
+【Traits 五元结构验证】
+[✓] Input: egoSpeed, currentSteeringWheelAngle, waypoints[6]
+[✓] Output: steeringWheelAngle, acceleration
+[✓] Param: mpcParam, steeringRatio
+[✓] State: prevControlSequence[], lastAppliedControl, initialized
+[✓] Sub: fitTrajectory, mpcOptimize, clampVal (值语义)
+
+【基类与继承验证】
+[✓] 继承 FuncModule<WaypointFollowTraits>
+[✓] using FuncModule::FuncModule
+[✓] run() 签名: void run(const Input&, Output&) override
+
+【值语义与依赖注入验证】
+[✓] 无指针设计: Sub 结构体全部值语义
+[✓] 先配置后移动: 测试中 PredictBicycleState → MpcComputeCost → MpcOptimize → WaypointFollow 严格按序
+[✓] std::move 正确使用: 所有子模块组装均通过 std::move
+
+【MBD 注解规范验证】
+[✓] MBD_AUTO_GEN_BEGIN [WaypointFollow] / MBD_AUTO_GEN_END [WaypointFollow]
+[✓] models/WaypointFollow.json 蓝图文件存在
+[✓] 执行序列: fitTrajectory → mpcOptimize → clampVal 与 JSON 一致
+
+【命名与文件结构验证】
+[✓] Traits: WaypointFollowTraits
+[✓] 头文件: include/mbd/WaypointFollow.hpp + #pragma once
+[✓] 源文件: src/mbd/WaypointFollow.cpp
+[✓] 拓扑: models/WaypointFollow.json
+
+验证结论：✓ 通过
+═══════════════════════════════════════

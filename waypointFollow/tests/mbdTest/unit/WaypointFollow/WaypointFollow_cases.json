@@ -1,0 +1,44 @@
+{
+  "module_name": "WaypointFollow",
+  "traits_type": "WaypointFollowTraits",
+  "description": "WaypointFollow MBD top-level integration test cases",
+  "test_cases": [
+    {
+      "id": "WF_TC001",
+      "description": "Straight line: steering near zero",
+      "input": {
+        "egoSpeed": 10.0,
+        "currentSteeringWheelAngle": 0.0,
+        "waypoints": [[5,0],[10,0],[15,0],[20,0],[25,0],[30,0]]
+      },
+      "expected_output": {"steeringWheelAngle_near_zero": true, "acceleration_bounded": true}
+    },
+    {
+      "id": "WF_TC002",
+      "description": "Left curve: positive steering",
+      "input": {
+        "egoSpeed": 10.0,
+        "currentSteeringWheelAngle": 0.0,
+        "waypoints": [[5,0.5],[10,2.0],[15,4.5],[20,8.0],[25,12.5],[30,18.0]]
+      },
+      "expected_output": {"steeringWheelAngle_positive": true}
+    },
+    {
+      "id": "WF_TC003",
+      "description": "Low speed protection",
+      "input": {
+        "egoSpeed": 0.3,
+        "currentSteeringWheelAngle": 0.1,
+        "waypoints": [[5,0],[10,0],[15,0],[20,0],[25,0],[30,0]]
+      },
+      "expected_output": {"steeringWheelAngle": 0.1, "acceleration": 0.0}
+    },
+    {
+      "id": "WF_TC004",
+      "description": "Closed-loop circular arc tracking (multi-step)",
+      "type": "closed_loop_simulation",
+      "steps": 50,
+      "radius": 100.0
+    }
+  ]
+}

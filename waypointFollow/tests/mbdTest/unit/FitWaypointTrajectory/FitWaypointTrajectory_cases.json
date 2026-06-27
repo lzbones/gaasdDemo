@@ -1,0 +1,21 @@
+{
+  "module_name": "FitWaypointTrajectory",
+  "traits_type": "FitWaypointTrajectoryTraits",
+  "description": "FitWaypointTrajectory component integration tests",
+  "test_cases": [
+    {
+      "id": "FWT_TC001",
+      "description": "Straight line waypoints",
+      "input": {
+        "waypoints": [[5,0],[10,0],[15,0],[20,0],[25,0],[30,0]],
+        "numWaypoints": 6,
+        "egoSpeed": 10.0
+      },
+      "expected_output": {
+        "trajectory.valid": true,
+        "trajectory.refSpeed_approx": 10.0
+      },
+      "tolerance": 1.0
+    }
+  ]
+}

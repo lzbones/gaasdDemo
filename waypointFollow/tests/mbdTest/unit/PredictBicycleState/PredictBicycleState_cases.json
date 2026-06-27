@@ -1,0 +1,10 @@
+{
+  "module_name": "PredictBicycleState",
+  "traits_type": "PredictBicycleStateTraits",
+  "description": "PredictBicycleState element unit tests",
+  "test_cases": [
+    {"id": "PBS_TC001", "description": "Straight line at 10m/s", "input": {"x": 0.0, "y": 0.0, "yaw": 0.0, "v": 10.0, "steeringAngle": 0.0, "acceleration": 0.0}, "param": {"dt": 0.1, "wheelbase": 2.85}, "expected_output": {"xNext": 1.0, "yNext": 0.0, "yawNext": 0.0, "vNext": 10.0}, "tolerance": 1e-10},
+    {"id": "PBS_TC002", "description": "Acceleration from rest", "input": {"x": 0.0, "y": 0.0, "yaw": 0.0, "v": 0.0, "steeringAngle": 0.0, "acceleration": 2.0}, "param": {"dt": 0.1, "wheelbase": 2.85}, "expected_output": {"xNext": 0.0, "yNext": 0.0, "yawNext": 0.0, "vNext": 0.2}, "tolerance": 1e-10},
+    {"id": "PBS_TC003", "description": "Turn with steering", "input": {"x": 0.0, "y": 0.0, "yaw": 0.0, "v": 10.0, "steeringAngle": 0.1, "acceleration": 0.0}, "param": {"dt": 0.1, "wheelbase": 2.85}, "expected_output": {"xNext": 1.0, "yNext": 0.0, "yawNext": 0.035128, "vNext": 10.0}, "tolerance": 0.001}
+  ]
+}

@@ -1,0 +1,475 @@
+% !TEX program = xelatex
+\documentclass[a4paper,10pt]{article}
+\usepackage[UTF8,fontset=none]{ctex}
+\usepackage{xeCJK}
+\setCJKmainfont{Songti SC}
+\setCJKsansfont{STHeiti}
+\setCJKmonofont{Songti SC}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, fit}
+\usepackage{amsmath, amssymb}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{tabularx}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!60!black,
+  urlcolor=blue!60!black,
+  bookmarksnumbered=true
+}
+
+% 页眉页脚
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small clampValue~---~函数设计文档}
+\fancyhead[R]{\small 内部公开}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% 层级编号
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+
+% 表格列宽辅助
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+
+% ============================================================
+\begin{document}
+
+% ==================== 封面表格 ====================
+\thispagestyle{empty}
+
+\begin{center}
+{\CJKfamily{zhsong}\bfseries\Large 函数设计文档}
+\end{center}
+
+\vspace{8pt}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{|L{3.2cm}|L{4.5cm}|L{3.2cm}|L{4.5cm}|}
+\hline
+\textbf{函数英文名} & clampValue &
+\textbf{函数中文名} & 数值限幅截断 \\
+\hline
+\textbf{函数类型} & 元件 (Element) &
+\textbf{版本} & 2.0 \\
+\hline
+\textbf{作者} & 许庆 &
+\textbf{日期} & 2026-06-26 \\
+\hline
+\textbf{联系方式} & \multicolumn{3}{l|}{18612426814~/~qingxu@tsinghua.edu.cn} \\
+\hline
+\textbf{密级} & 内部公开 &
+\textbf{AI辅助} & Cursor Agent (Claude Opus 4.6) \\
+\hline
+\end{tabular}
+\end{center}
+
+\vspace{12pt}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{|C{1.2cm}|C{2cm}|L{5cm}|C{2cm}|C{2cm}|}
+\hline
+\multicolumn{5}{|c|}{\textbf{更改记录}} \\
+\hline
+\textbf{版本} & \textbf{日期} & \textbf{更改说明} & \textbf{作者} & \textbf{辅助AI} \\
+\hline
+2.0 & 2026-06-26 & 初始版本 & 许庆 & Claude Opus 4.6 \\
+\hline
+\end{tabular}
+\end{center}
+
+\newpage
+
+% ==================== 目录 ====================
+\tableofcontents
+\newpage
+
+% ============================================================
+%  1. 函数需求
+% ============================================================
+\section{函数需求}
+
+\subsection{功能概述}
+
+\texttt{clampValue} 将输入数值截断到指定闭区间 $[\text{minVal}, \text{maxVal}]$ 内。
+若输入值低于下限则返回下限，高于上限则返回上限，否则返回原值。
+
+\subsection{输入/输出/返回值}
+
+\renewcommand{\arraystretch}{1.3}
+\begin{longtable}{|C{1.5cm}|L{3.5cm}|C{2cm}|L{8cm}|}
+\hline
+\textbf{类别} & \textbf{名称} & \textbf{类型} & \textbf{说明} \\
+\hline
+\endfirsthead
+\hline
+\textbf{类别} & \textbf{名称} & \textbf{类型} & \textbf{说明} \\
+\hline
+\endhead
+输入 & \texttt{value} & double & 待截断数值 \\
+\hline
+输入 & \texttt{minVal} & double & 截断下限 \\
+\hline
+输入 & \texttt{maxVal} & double & 截断上限 \\
+\hline
+返回值 & --- & double & 截断后的数值，$\in [\text{minVal}, \text{maxVal}]$ \\
+\hline
+\end{longtable}
+
+% ============================================================
+%  1.2 算法设计
+% ============================================================
+\subsection{算法设计}
+
+数值限幅截断的数学表达式为：
+\begin{equation}
+  \text{output} = \max\!\big(\text{minVal},\; \min(\text{maxVal},\; \text{value})\big)
+\end{equation}
+
+等价的分段函数形式：
+\begin{equation}
+  \text{output} =
+  \begin{cases}
+    \text{minVal}, & \text{value} < \text{minVal} \\
+    \text{maxVal}, & \text{value} > \text{maxVal} \\
+    \text{value},  & \text{otherwise}
+  \end{cases}
+\end{equation}
+
+实现中采用两步条件赋值避免调用 \texttt{std::min}/\texttt{std::max}：
+\begin{enumerate}
+  \item $\text{clampedLow} = (\text{value} < \text{minVal})\ ?\ \text{minVal} : \text{value}$
+  \item $\text{result} = (\text{clampedLow} > \text{maxVal})\ ?\ \text{maxVal} : \text{clampedLow}$
+\end{enumerate}
+
+% ============================================================
+%  1.3 程序流程图
+% ============================================================
+\subsection{程序流程图}
+
+\begin{center}
+\begin{tikzpicture}[
+  node distance=1.0cm,
+  startstop/.style={rectangle, rounded corners, minimum width=3.5cm, minimum height=0.7cm,
+    text centered, draw=black, fill=blue!8, font=\small},
+  process/.style={rectangle, minimum width=4.5cm, minimum height=0.7cm,
+    text centered, draw=black, fill=orange!8, font=\small},
+  decision/.style={diamond, aspect=2.5, minimum width=2cm,
+    text centered, draw=black, fill=green!8, font=\small},
+  arrow/.style={-{Stealth[length=2.5mm]}, thick}
+]
+
+\node (start) [startstop] {开始};
+\node (input) [process, below=of start] {读入 value, minVal, maxVal};
+\node (chklow) [decision, below=of input] {value $<$ minVal?};
+\node (setlow) [process, right=3cm of chklow] {clampedLow = minVal};
+\node (keepval) [process, below=of chklow, yshift=-0.5cm] {clampedLow = value};
+\node (chkhigh) [decision, below=of keepval] {clampedLow $>$ maxVal?};
+\node (sethigh) [process, right=3cm of chkhigh] {result = maxVal};
+\node (keepcl) [process, below=of chkhigh, yshift=-0.5cm] {result = clampedLow};
+\node (output) [process, below=of keepcl] {返回 result};
+\node (stop) [startstop, below=of output] {结束};
+
+\draw [arrow] (start) -- (input);
+\draw [arrow] (input) -- (chklow);
+\draw [arrow] (chklow) -- node[above]{\small 是} (setlow);
+\draw [arrow] (chklow) -- node[right]{\small 否} (keepval);
+\draw [arrow] (setlow) |- (chkhigh);
+\draw [arrow] (keepval) -- (chkhigh);
+\draw [arrow] (chkhigh) -- node[above]{\small 是} (sethigh);
+\draw [arrow] (chkhigh) -- node[right]{\small 否} (keepcl);
+\draw [arrow] (sethigh) |- (output);
+\draw [arrow] (keepcl) -- (output);
+\draw [arrow] (output) -- (stop);
+
+\end{tikzpicture}
+\end{center}
+
+% ============================================================
+%  1.4 函数接口
+% ============================================================
+\subsection{函数接口}
+
+\begin{verbatim}
+double clampValue(const double value, const double minVal, const double maxVal);
+\end{verbatim}
+
+% ============================================================
+%  1.5 输入输出模块图
+% ============================================================
+\subsection{输入输出模块图}
+
+\begin{center}
+\begin{tikzpicture}[
+  box/.style={rectangle, draw=black, thick, minimum width=3.0cm, minimum height=0.6cm,
+    text centered, fill=yellow!10, font=\small},
+  core/.style={rectangle, draw=black, very thick, minimum width=4cm, minimum height=1.8cm,
+    text centered, fill=orange!10, font=\normalsize\bfseries, rounded corners=3pt},
+  arrow/.style={-{Stealth[length=2.5mm]}, thick}
+]
+
+\node (core) [core] {clampValue};
+
+\node (in1) [box, left=3cm of core, yshift=0.8cm] {value (double)};
+\node (in2) [box, left=3cm of core, yshift=0cm] {minVal (double)};
+\node (in3) [box, left=3cm of core, yshift=-0.8cm] {maxVal (double)};
+
+\node (out1) [box, right=3cm of core] {result (double)};
+
+\draw [arrow] (in1) -- (core);
+\draw [arrow] (in2) -- (core);
+\draw [arrow] (in3) -- (core);
+\draw [arrow] (core) -- (out1);
+
+\node [above=0.1cm of in1, font=\small\bfseries] {输入 (Input)};
+\node [above=0.1cm of out1, font=\small\bfseries] {输出 (Output)};
+
+\end{tikzpicture}
+\end{center}
+
+% ============================================================
+%  1.6 函数诸元表
+% ============================================================
+\subsection{函数诸元表}
+
+\renewcommand{\arraystretch}{1.3}
+\begin{longtable}{|L{3.8cm}|L{11.5cm}|}
+\hline
+\textbf{属性} & \textbf{说明} \\
+\hline
+\endfirsthead
+\hline
+\textbf{属性} & \textbf{说明} \\
+\hline
+\endhead
+函数英文名 & \texttt{clampValue} \\
+\hline
+函数中文名 & 数值限幅截断 \\
+\hline
+函数类型 & 元件 (Element) \\
+\hline
+版本 & 2.0 \\
+\hline
+源文件 & \texttt{src/cpp/clampValue/clampValue.cpp} \\
+\hline
+头文件 & \texttt{include/cpp/clampValue/clampValue.hpp} \\
+\hline
+命名空间 & \texttt{waypoint\_follow} \\
+\hline
+输入数量 & 3（value, minVal, maxVal） \\
+\hline
+输出数量 & 1（返回值 double） \\
+\hline
+参数数量 & 0 \\
+\hline
+状态数量 & 0（无状态，纯函数） \\
+\hline
+下级函数数量 & 0 \\
+\hline
+动态内存分配 & 无 \\
+\hline
+外部依赖 & 无 \\
+\hline
+算法类别 & 数值截断 / 安全限幅 \\
+\hline
+\end{longtable}
+
+% ============================================================
+%  1.7 函数架构
+% ============================================================
+\subsection{函数架构}
+
+无下级函数调用。\texttt{clampValue} 为叶节点元件，仅包含条件判断与赋值操作。
+
+% ============================================================
+%  1.8 数据结构定义
+% ============================================================
+\subsection{数据结构定义}
+
+无自定义数据结构。所有输入输出均为 \texttt{double} 标量。
+
+% ============================================================
+%  1.9 测试用例
+% ============================================================
+\subsection{测试用例}
+
+\subsubsection{正常测试用例}
+
+{\small
+\begin{longtable}{|C{0.6cm}|L{2.2cm}|L{4.5cm}|L{3.5cm}|L{3.8cm}|}
+\hline
+\textbf{编号} & \textbf{场景} & \textbf{输入} & \textbf{预期输出} & \textbf{验证准则} \\
+\hline
+\endfirsthead
+\hline
+\textbf{编号} & \textbf{场景} & \textbf{输入} & \textbf{预期输出} & \textbf{验证准则} \\
+\hline
+\endhead
+N-1 &
+值在区间内 &
+$v{=}5.0$, $l{=}0.0$, $h{=}10.0$ &
+$r = 5.0$ &
+$r = v$（原值返回） \\
+\hline
+N-2 &
+值等于下限 &
+$v{=}0.0$, $l{=}0.0$, $h{=}10.0$ &
+$r = 0.0$ &
+$r = l$（边界值） \\
+\hline
+N-3 &
+值等于上限 &
+$v{=}10.0$, $l{=}0.0$, $h{=}10.0$ &
+$r = 10.0$ &
+$r = h$（边界值） \\
+\hline
+N-4 &
+值低于下限 &
+$v{=}{-}3.0$, $l{=}0.0$, $h{=}10.0$ &
+$r = 0.0$ &
+$r = l$（下截断） \\
+\hline
+N-5 &
+值高于上限 &
+$v{=}15.0$, $l{=}0.0$, $h{=}10.0$ &
+$r = 10.0$ &
+$r = h$（上截断） \\
+\hline
+\end{longtable}
+}
+
+\vspace{6pt}
+{\small
+\begin{longtable}{|L{2.5cm}|L{13cm}|}
+\hline
+\multicolumn{2}{|c|}{\textbf{正常测试用例符号说明}} \\
+\hline
+\textbf{符号} & \textbf{含义} \\
+\hline
+$v$ & 输入值 value \\
+\hline
+$l$ & 截断下限 minVal \\
+\hline
+$h$ & 截断上限 maxVal \\
+\hline
+$r$ & 返回值 result \\
+\hline
+\end{longtable}
+}
+
+\subsubsection{异常测试用例}
+
+{\small
+\begin{longtable}{|C{0.6cm}|L{2.0cm}|L{4.2cm}|L{4.0cm}|L{3.8cm}|}
+\hline
+\textbf{编号} & \textbf{场景} & \textbf{输入} & \textbf{预期输出/行为} & \textbf{验证准则} \\
+\hline
+\endfirsthead
+\hline
+\textbf{编号} & \textbf{场景} & \textbf{输入} & \textbf{预期输出/行为} & \textbf{验证准则} \\
+\hline
+\endhead
+A-1 &
+value 为 NaN &
+$v{=}\text{NaN}$, $l{=}0$, $h{=}10$ &
+条件比较结果为 false，返回 NaN &
+函数不崩溃，正常返回 \\
+\hline
+A-2 &
+value 为 $+\infty$ &
+$v{=}+\infty$, $l{=}0$, $h{=}10$ &
+$r = 10.0$（上截断） &
+$+\infty > h$ 成立，被截断 \\
+\hline
+A-3 &
+value 为 $-\infty$ &
+$v{=}-\infty$, $l{=}0$, $h{=}10$ &
+$r = 0.0$（下截断） &
+$-\infty < l$ 成立，被截断 \\
+\hline
+A-4 &
+minVal 为 NaN &
+$v{=}5$, $l{=}\text{NaN}$, $h{=}10$ &
+NaN 比较为 false，可能返回 $v$ 或 NaN &
+函数不崩溃 \\
+\hline
+A-5 &
+maxVal 为 NaN &
+$v{=}5$, $l{=}0$, $h{=}\text{NaN}$ &
+NaN 比较为 false，可能返回 $v$ 或 NaN &
+函数不崩溃 \\
+\hline
+A-6 &
+minVal $>$ maxVal &
+$v{=}5$, $l{=}10$, $h{=}0$ &
+$r = 0$（先截下限得 10，再截上限得 0） &
+退化区间行为确定 \\
+\hline
+A-7 &
+全部为 $+\infty$ &
+$v{=}+\infty$, $l{=}+\infty$, $h{=}+\infty$ &
+$r = +\infty$ &
+函数不崩溃 \\
+\hline
+A-8 &
+minVal $=$ maxVal &
+$v{=}5$, $l{=}3$, $h{=}3$ &
+$r = 3.0$ &
+零宽区间直接返回该值 \\
+\hline
+A-9 &
+极大值输入 &
+$v{=}1.7\!\times\!10^{308}$, $l{=}0$, $h{=}100$ &
+$r = 100.0$（上截断） &
+double 最大值被正确截断 \\
+\hline
+A-10 &
+极小负值输入 &
+$v{=}{-}1.7\!\times\!10^{308}$, $l{=}{-}100$, $h{=}0$ &
+$r = -100.0$（下截断） &
+double 最小值被正确截断 \\
+\hline
+\end{longtable}
+}
+
+\vspace{6pt}
+{\small
+\begin{longtable}{|L{2.5cm}|L{13cm}|}
+\hline
+\multicolumn{2}{|c|}{\textbf{异常测试用例符号说明}} \\
+\hline
+\textbf{符号} & \textbf{含义} \\
+\hline
+$v$ & 输入值 value \\
+\hline
+$l$ & 截断下限 minVal \\
+\hline
+$h$ & 截断上限 maxVal \\
+\hline
+$r$ & 返回值 result \\
+\hline
+NaN & IEEE 754 非数值 (Not a Number)，任何与 NaN 的比较返回 false \\
+\hline
+$+\infty$ & IEEE 754 正无穷大 \\
+\hline
+$-\infty$ & IEEE 754 负无穷大 \\
+\hline
+$1.7\!\times\!10^{308}$ & 接近 double 最大有限值 (DBL\_MAX) \\
+\hline
+\end{longtable}
+}
+
+\end{document}

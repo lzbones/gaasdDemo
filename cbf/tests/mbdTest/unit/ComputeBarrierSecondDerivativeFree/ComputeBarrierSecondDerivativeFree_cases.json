@@ -1,0 +1,35 @@
+{
+  "module_name": "ComputeBarrierSecondDerivativeFree",
+  "traits_type": "ComputeBarrierSecondDerivativeFreeTraits",
+  "description": "ComputeBarrierSecondDerivativeFree Traits 级单元测试用例",
+  "test_cases": [
+    {
+      "id": "TC1_no_obacc",
+      "input": {
+        "dxEgo": 10,
+        "dyEgo": 0,
+        "vRxEgo": -2,
+        "vRyEgo": 0,
+        "axObEgo": 0,
+        "ayObEgo": 0
+      },
+      "expected_output": {
+        "barrierDdotFree": 8
+      }
+    },
+    {
+      "id": "TC2_with_obacc",
+      "input": {
+        "dxEgo": 1,
+        "dyEgo": 1,
+        "vRxEgo": 1,
+        "vRyEgo": 1,
+        "axObEgo": 1,
+        "ayObEgo": 1
+      },
+      "expected_output": {
+        "barrierDdotFree": 8
+      }
+    }
+  ]
+}

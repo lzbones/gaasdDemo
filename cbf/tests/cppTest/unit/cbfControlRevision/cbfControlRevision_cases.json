@@ -1,0 +1,18 @@
+{
+  "function_name": "cbfControlRevision",
+  "description": "CBF 顶层入口测试",
+  "test_cases": [
+    {
+      "id": "TC1_far_obstacle",
+      "desc": "远处障碍物，输出近似原始控制"
+    },
+    {
+      "id": "TC2_imminent_collision",
+      "desc": "近距离正前方接近，输出加速度应明显小于 0"
+    },
+    {
+      "id": "TC3_no_obstacle",
+      "desc": "无障碍物 → 输出=原始指令"
+    }
+  ]
+}

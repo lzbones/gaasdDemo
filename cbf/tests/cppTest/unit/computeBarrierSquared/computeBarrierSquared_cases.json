@@ -1,0 +1,30 @@
+{
+  "function_name": "computeBarrierSquared",
+  "description": "平方距离 Barrier 单元测试用例",
+  "test_cases": [
+    {
+      "id": "TC001_outside_safe",
+      "dxEgo": 10.0,
+      "dyEgo": 0.0,
+      "safetyRadius": 4.0,
+      "expected": 84.0,
+      "tolerance": 1e-09
+    },
+    {
+      "id": "TC002_inside_safe",
+      "dxEgo": 1.0,
+      "dyEgo": 1.0,
+      "safetyRadius": 4.0,
+      "expected": -14.0,
+      "tolerance": 1e-09
+    },
+    {
+      "id": "TC003_on_boundary",
+      "dxEgo": 4.0,
+      "dyEgo": 0.0,
+      "safetyRadius": 4.0,
+      "expected": 0.0,
+      "tolerance": 1e-09
+    }
+  ]
+}

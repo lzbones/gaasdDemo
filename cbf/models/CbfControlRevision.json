@@ -1,0 +1,96 @@
+{
+  "name": "CbfControlRevision",
+  "includes": [
+    "FuncModule.hpp",
+    "RotateVectorByMinusYaw.hpp",
+    "ComputeObstacleAffineConstraint.hpp",
+    "SolveQpHildreth.hpp",
+    "ClampControlInput.hpp"
+  ],
+  "ports": {
+    "Input": [
+      "EgoSnapshot egoState;",
+      "ObstacleSnapshot obstacles[MAX_MBD_OBSTACLES];",
+      "size_t obstacleNum = 0;"
+    ],
+    "Output": [
+      "double aSafe = 0.0;",
+      "double deltaFSafe = 0.0;",
+      "bool feasible = true;",
+      "size_t activeNum = 0;",
+      "size_t iterUsed = 0;"
+    ],
+    "Param": [
+      "double safetyRadius = 5.0;",
+      "double alpha1 = 1.2;",
+      "double alpha2 = 1.2;",
+      "double wheelBase = 2.7;",
+      "double aMin = -7.0;",
+      "double aMax = 7.0;",
+      "double deltaFMin = -0.5;",
+      "double deltaFMax = 0.5;",
+      "double qDiagAccel = 1.0;",
+      "double qDiagSteer = 5.0;",
+      "size_t qpMaxIter = 200;",
+      "double qpTolerance = 1e-6;"
+    ],
+    "State": [],
+    "Sub": [
+      "RotateVectorByMinusYaw rotator;",
+      "ComputeObstacleAffineConstraint constraintGen;",
+      "SolveQpHildreth qpSolver;",
+      "ClampControlInput clamper;"
+    ]
+  },
+  "execution_sequence": [
+    {
+      "node": "rotator",
+      "type": "RotateVectorByMinusYaw",
+      "inputs": {
+        "vxGlobal": "obstacles[i].axGlobal",
+        "vyGlobal": "obstacles[i].ayGlobal",
+        "yaw": "egoState.phi"
+      }
+    },
+    {
+      "node": "constraintGen",
+      "type": "ComputeObstacleAffineConstraint",
+      "inputs": {
+        "egoVelocity": "egoState.velocity",
+        "dxEgo": "obstacles[i].dxEgo",
+        "dyEgo": "obstacles[i].dyEgo",
+        "vRxEgo": "obstacles[i].vRxEgo",
+        "vRyEgo": "obstacles[i].vRyEgo",
+        "axObEgo": "rotatorOut.vxEgo",
+        "ayObEgo": "rotatorOut.vyEgo"
+      }
+    },
+    {
+      "node": "qpSolver",
+      "type": "SolveQpHildreth",
+      "inputs": {
+        "qDiagA": "param.qDiagAccel",
+        "qDiagT": "param.qDiagSteer",
+        "cVec": "[-2*qDiagAccel*aOriginal, -2*qDiagSteer*tan(deltaFOriginal)]",
+        "aMatRowMajor": "stacked_constraints",
+        "bVec": "stacked_bounds",
+        "rowCount": "obstacleNum + 4"
+      }
+    },
+    {
+      "node": "clamper",
+      "type": "ClampControlInput",
+      "inputs": {
+        "aRaw": "qpSolverOut.uSolution[0]",
+        "deltaFRaw": "atan(qpSolverOut.uSolution[1])"
+      }
+    }
+  ],
+  "outputs": {
+    "aSafe": "clamperOut.aFinal",
+    "deltaFSafe": "clamperOut.deltaFFinal",
+    "feasible": "qpSolverOut.feasible",
+    "activeNum": "obstacleNum",
+    "iterUsed": "qpSolverOut.iterUsed"
+  }
+}

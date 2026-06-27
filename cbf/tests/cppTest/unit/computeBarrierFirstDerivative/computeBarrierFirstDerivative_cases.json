@@ -1,0 +1,33 @@
+{
+  "function_name": "computeBarrierFirstDerivative",
+  "description": "Barrier 一阶导单元测试用例",
+  "test_cases": [
+    {
+      "id": "TC001_approaching",
+      "dxEgo": 10.0,
+      "dyEgo": 0.0,
+      "vRxEgo": -3.0,
+      "vRyEgo": 0.0,
+      "expected": -60.0,
+      "tolerance": 1e-09
+    },
+    {
+      "id": "TC002_leaving",
+      "dxEgo": 5.0,
+      "dyEgo": 5.0,
+      "vRxEgo": 1.0,
+      "vRyEgo": 1.0,
+      "expected": 20.0,
+      "tolerance": 1e-09
+    },
+    {
+      "id": "TC003_perpendicular",
+      "dxEgo": 5.0,
+      "dyEgo": 0.0,
+      "vRxEgo": 0.0,
+      "vRyEgo": 4.0,
+      "expected": 0.0,
+      "tolerance": 1e-09
+    }
+  ]
+}

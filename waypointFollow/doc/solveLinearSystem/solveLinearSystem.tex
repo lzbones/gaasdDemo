@@ -1,0 +1,577 @@
+% !TEX program = xelatex
+\documentclass[a4paper,10pt]{article}
+\usepackage[UTF8,fontset=none]{ctex}
+\usepackage{xeCJK}
+\setCJKmainfont{Songti SC}
+\setCJKsansfont{STHeiti}
+\setCJKmonofont{Songti SC}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, fit}
+\usepackage{amsmath, amssymb}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{tabularx}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!60!black,
+  urlcolor=blue!60!black,
+  bookmarksnumbered=true
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small solveLinearSystem 函数设计文档}
+\fancyhead[R]{\small 内部公开}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+
+% ============================================================
+\begin{document}
+
+% ==================== 封面表格 ====================
+\thispagestyle{empty}
+
+\begin{center}
+{\CJKfamily{zhsong}\bfseries\Large 函数设计文档}
+\end{center}
+
+\vspace{8pt}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{|L{3.2cm}|L{4.5cm}|L{3.2cm}|L{4.5cm}|}
+\hline
+\textbf{函数英文名} & solveLinearSystem &
+\textbf{函数中文名} & 线性方程组求解 \\
+\hline
+\textbf{函数类型} & 元件 (Element) &
+\textbf{版本} & 2.0 \\
+\hline
+\textbf{作者} & 许庆 &
+\textbf{日期} & 2026-06-26 \\
+\hline
+\textbf{联系方式} & \multicolumn{3}{l|}{18612426814~/~qingxu@tsinghua.edu.cn} \\
+\hline
+\textbf{密级} & 内部公开 &
+\textbf{AI辅助} & Cursor Agent (Claude Opus 4.6) \\
+\hline
+\end{tabular}
+\end{center}
+
+\vspace{12pt}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{|C{1cm}|C{1.8cm}|L{3.8cm}|C{1.5cm}|C{1.5cm}|C{3cm}|}
+\hline
+\multicolumn{6}{|c|}{\textbf{更改记录}} \\
+\hline
+\textbf{版本} & \textbf{日期} & \textbf{更改说明} & \textbf{作者} & \textbf{审核} & \textbf{辅助AI} \\
+\hline
+1.0 & 2026-06-20 & 初始版本 & 许庆 & --- & --- \\
+\hline
+2.0 & 2026-06-26 & 增加部分主元选取策略 & 许庆 & --- & Claude Opus 4.6 \\
+\hline
+\end{tabular}
+\end{center}
+
+\newpage
+
+% ==================== 目录 ====================
+\tableofcontents
+\newpage
+
+% ============================================================
+%  1. 函数需求
+% ============================================================
+\section{函数需求}
+
+\subsection{功能概述}
+
+\texttt{solveLinearSystem} 使用高斯消元法（含部分主元选取）求解 $n \times n$ 线性方程组 $\mathbf{A}\mathbf{x} = \mathbf{b}$。
+系数矩阵以一维行主序数组传入，右端向量在求解成功后被解向量覆写。
+当检测到矩阵奇异（主元绝对值 $< 10^{-12}$）时返回 \texttt{false}。
+
+\subsection{输入/输出/返回值}
+
+\renewcommand{\arraystretch}{1.3}
+\begin{longtable}{|L{2.2cm}|L{3cm}|C{2.5cm}|L{7cm}|}
+\hline
+\textbf{方向} & \textbf{名称} & \textbf{类型} & \textbf{说明} \\
+\hline
+\endfirsthead
+\hline
+\textbf{方向} & \textbf{名称} & \textbf{类型} & \textbf{说明} \\
+\hline
+\endhead
+输入/输出 & \texttt{matrix} & \texttt{double*} & 行主序系数矩阵 $\mathbf{A}$（$n \times \text{maxDim}$），求解过程中被修改 \\
+\hline
+输入/输出 & \texttt{rhs} & \texttt{double*} & 右端向量 $\mathbf{b}$（长度 $n$），求解后存放解向量 $\mathbf{x}$ \\
+\hline
+输入 & \texttt{n} & \texttt{const int} & 方程组维数 \\
+\hline
+输入 & \texttt{maxDim} & \texttt{const int} & 矩阵行步长（第二维大小） \\
+\hline
+返回值 & --- & \texttt{bool} & 求解成功返回 \texttt{true}，矩阵奇异返回 \texttt{false} \\
+\hline
+\end{longtable}
+
+\subsection{功能需求}
+
+\begin{enumerate}[label=FR-\arabic*]
+  \item 对 $n \times n$ 线性方程组进行高斯消元求解。
+  \item 在每步消元前执行部分主元选取（列主元），选择当前列绝对值最大的元素作为主元。
+  \item 当主元绝对值小于阈值 $10^{-12}$ 时判定矩阵奇异，立即终止并返回 \texttt{false}。
+  \item 解向量原位存储于 \texttt{rhs} 数组中，避免额外内存分配。
+  \item 支持 \texttt{maxDim} $>$ \texttt{n} 的矩阵布局（跨步存储）。
+\end{enumerate}
+
+\subsection{非功能需求}
+
+\begin{enumerate}[label=NFR-\arabic*]
+  \item 不使用动态内存分配。
+  \item 仅依赖 \texttt{<cmath>} 标准库。
+  \item 时间复杂度 $O(n^3)$，空间复杂度 $O(1)$（原位操作）。
+\end{enumerate}
+
+% ============================================================
+%  2. 算法设计
+% ============================================================
+\section{算法设计}
+
+\subsection{线性方程组}
+
+求解线性方程组：
+\begin{equation}
+  \mathbf{A}\mathbf{x} = \mathbf{b}, \quad
+  \mathbf{A} \in \mathbb{R}^{n \times n}, \quad
+  \mathbf{x}, \mathbf{b} \in \mathbb{R}^{n}
+\end{equation}
+
+其中系数矩阵 $\mathbf{A}$ 以行主序一维数组存储，元素 $a_{ij}$ 的存储位置为 \texttt{matrix[$i \cdot \text{maxDim} + j$]}。
+
+\subsection{部分主元选取}
+
+对第 $k$ 步消元（$k = 0, 1, \ldots, n{-}1$），在当前列中选取绝对值最大的元素作为主元：
+\begin{equation}
+  p = \arg\max_{k \leq i < n} |a_{ik}^{(k)}|
+\end{equation}
+若 $|a_{pk}^{(k)}| < \varepsilon_{\text{sing}} = 10^{-12}$，则判定矩阵奇异，终止求解。
+否则交换第 $k$ 行与第 $p$ 行。
+
+\subsection{前向消元}
+
+对每个主元列 $k$，将下方各行的第 $k$ 列元素消为零：
+\begin{equation}
+  l_{ik} = \frac{a_{ik}^{(k)}}{a_{kk}^{(k)}}, \quad i = k{+}1, \ldots, n{-}1
+\end{equation}
+\begin{equation}
+  a_{ij}^{(k+1)} = a_{ij}^{(k)} - l_{ik} \cdot a_{kj}^{(k)}, \quad j = k{+}1, \ldots, n{-}1
+\end{equation}
+\begin{equation}
+  b_i^{(k+1)} = b_i^{(k)} - l_{ik} \cdot b_k^{(k)}
+\end{equation}
+
+\subsection{回代求解}
+
+消元完成后，$\mathbf{A}$ 变为上三角矩阵，从最后一行向上回代：
+\begin{equation}
+  x_i = \frac{b_i^{(n)} - \displaystyle\sum_{j=i+1}^{n-1} a_{ij}^{(n)} x_j}{a_{ii}^{(n)}}, \quad i = n{-}1, n{-}2, \ldots, 0
+\end{equation}
+
+% ============================================================
+%  3. 程序流程图
+% ============================================================
+\section{程序流程图}
+
+\begin{center}
+\begin{tikzpicture}[
+  node distance=0.9cm and 2cm,
+  startstop/.style={rectangle, rounded corners, minimum width=3.5cm, minimum height=0.7cm,
+    text centered, draw=black, fill=blue!8, font=\small},
+  process/.style={rectangle, minimum width=4.5cm, minimum height=0.7cm,
+    text centered, draw=black, fill=orange!8, font=\small},
+  decision/.style={diamond, aspect=2.5, minimum width=2cm,
+    text centered, draw=black, fill=green!8, font=\small},
+  io/.style={trapezium, trapezium left angle=70, trapezium right angle=110,
+    minimum width=3.5cm, minimum height=0.7cm,
+    text centered, draw=black, fill=yellow!8, font=\small},
+  arrow/.style={-{Stealth[length=2.5mm]}, thick}
+]
+
+\node (start) [startstop] {开始};
+\node (input) [io, below=of start] {读入 matrix, rhs, n, maxDim};
+\node (init) [process, below=of input] {success $\gets$ true};
+\node (loop) [decision, below=of init] {col $< n$\,?};
+\node (pivot) [process, below=of loop] {在 col 列找最大主元};
+\node (singchk) [decision, below=of pivot] {主元 $> 10^{-12}$\,?};
+\node (fail) [process, right=3cm of singchk] {success $\gets$ false};
+\node (swap) [decision, below=of singchk] {需行交换?};
+\node (doswap) [process, right=3cm of swap] {交换第 col 行与主元行};
+\node (elim) [process, below=of swap] {消元：消去 col 列下方元素};
+\node (inc) [process, below=of elim] {col $\gets$ col $+ 1$};
+\node (backchk) [decision, below=of inc] {success\,?};
+\node (backsub) [process, below=of backchk] {回代求解};
+\node (output) [io, below=of backsub] {输出 rhs（解向量）, success};
+\node (stop) [startstop, below=of output] {结束};
+
+\draw [arrow] (start) -- (input);
+\draw [arrow] (input) -- (init);
+\draw [arrow] (init) -- (loop);
+\draw [arrow] (loop) -- node[right]{\small 是} (pivot);
+\draw [arrow] (loop.east) -- ++(2.5,0) node[above,midway]{\small 否} |- (backchk.east);
+\draw [arrow] (pivot) -- (singchk);
+\draw [arrow] (singchk) -- node[above]{\small 否} (fail);
+\draw [arrow] (fail) |- (backchk.east);
+\draw [arrow] (singchk) -- node[right]{\small 是} (swap);
+\draw [arrow] (swap) -- node[above]{\small 是} (doswap);
+\draw [arrow] (doswap) |- ([yshift=-0.15cm]swap.south) -- (elim);
+\draw [arrow] (swap) -- node[right]{\small 否} (elim);
+\draw [arrow] (elim) -- (inc);
+\draw [arrow] (inc.west) -- ++(-2,0) |- (loop.west);
+\draw [arrow] (backchk) -- node[right]{\small 是} (backsub);
+\draw [arrow] (backchk.west) -- ++(-1.5,0) node[above,midway]{\small 否} |- (output.west);
+\draw [arrow] (backsub) -- (output);
+\draw [arrow] (output) -- (stop);
+
+\end{tikzpicture}
+\end{center}
+
+% ============================================================
+%  4. 函数接口与输入输出模块图
+% ============================================================
+\section{函数接口与输入输出模块图}
+
+\subsection{函数接口}
+
+\begin{verbatim}
+bool solveLinearSystem(double* matrix, double* rhs,
+                       const int n, const int maxDim);
+\end{verbatim}
+
+\subsection{输入输出模块图}
+
+\begin{center}
+\begin{tikzpicture}[
+  core/.style={rectangle, draw=black, very thick, minimum width=5cm, minimum height=2cm,
+    text centered, fill=orange!10, font=\normalsize\bfseries, rounded corners=3pt},
+  iobox/.style={rectangle, draw=black, thick, minimum width=3.2cm, minimum height=0.6cm,
+    text centered, fill=yellow!10, font=\small},
+  arrow/.style={-{Stealth[length=2.5mm]}, thick}
+]
+
+\node (core) [core] {solveLinearSystem};
+
+\node (in1) [iobox, left=3cm of core, yshift=1.2cm] {matrix (double*)};
+\node (in2) [iobox, left=3cm of core, yshift=0.4cm] {rhs (double*)};
+\node (in3) [iobox, left=3cm of core, yshift=-0.4cm] {n (int)};
+\node (in4) [iobox, left=3cm of core, yshift=-1.2cm] {maxDim (int)};
+
+\node (out1) [iobox, right=3cm of core, yshift=0.4cm] {rhs（解向量覆写）};
+\node (out2) [iobox, right=3cm of core, yshift=-0.4cm] {return bool};
+
+\draw [arrow] (in1) -- (core);
+\draw [arrow] (in2) -- (core);
+\draw [arrow] (in3) -- (core);
+\draw [arrow] (in4) -- (core);
+\draw [arrow] (core) -- (out1);
+\draw [arrow] (core) -- (out2);
+
+\node [above=0.1cm of in1, font=\small\bfseries] {输入 (Input)};
+\node [above=0.1cm of out1, font=\small\bfseries] {输出 (Output)};
+
+\end{tikzpicture}
+\end{center}
+
+% ============================================================
+%  5. 函数诸元表
+% ============================================================
+\section{函数诸元表}
+
+\renewcommand{\arraystretch}{1.3}
+\begin{longtable}{|L{3.8cm}|L{11.5cm}|}
+\hline
+\textbf{属性} & \textbf{说明} \\
+\hline
+\endfirsthead
+\hline
+\textbf{属性} & \textbf{说明} \\
+\hline
+\endhead
+函数英文名 & \texttt{solveLinearSystem} \\
+\hline
+函数中文名 & 线性方程组求解 \\
+\hline
+函数类型 & 元件 (Element) \\
+\hline
+版本 & 2.0 \\
+\hline
+源文件 & \texttt{src/cpp/solveLinearSystem/solveLinearSystem.cpp} \\
+\hline
+头文件 & \texttt{include/cpp/solveLinearSystem/solveLinearSystem.hpp} \\
+\hline
+命名空间 & \texttt{waypoint\_follow} \\
+\hline
+输入数量 & 4（matrix, rhs, n, maxDim） \\
+\hline
+输出数量 & 2（rhs 覆写为解向量, 返回值 bool） \\
+\hline
+参数数量 & 0 \\
+\hline
+状态数量 & 0 \\
+\hline
+下级函数数量 & 0 \\
+\hline
+动态内存分配 & 无 \\
+\hline
+外部依赖 & 仅 \texttt{<cmath>}（\texttt{std::fabs}） \\
+\hline
+算法类别 & 高斯消元法 / 线性代数 \\
+\hline
+时间复杂度 & $O(n^3)$ \\
+\hline
+奇异阈值 & $\varepsilon = 10^{-12}$ \\
+\hline
+\end{longtable}
+
+% ============================================================
+%  6. 函数架构图
+% ============================================================
+\section{函数架构图}
+
+\begin{center}
+\begin{tikzpicture}[
+  every node/.style={rectangle, draw, rounded corners=2pt, thick,
+    minimum height=0.65cm, text centered, font=\footnotesize,
+    fill=blue!5}
+]
+
+\node (main) {solveLinearSystem};
+\node [below=0.6cm of main, draw=none, fill=none, font=\small\itshape] {无下级函数调用};
+
+\end{tikzpicture}
+\end{center}
+
+% ============================================================
+%  7. 下级函数需求
+% ============================================================
+\section{下级函数需求}
+
+本函数为叶子元件，无下级函数调用。
+
+% ============================================================
+%  8. 数据结构定义
+% ============================================================
+\section{数据结构定义}
+
+本函数采用纯数值接口（\texttt{double*} 数组 + 整数维度参数），不引用自定义结构体。
+
+\subsection{相关常量}
+
+\begin{longtable}{|L{5cm}|C{1.5cm}|L{8.5cm}|}
+\hline
+\textbf{常量名} & \textbf{值} & \textbf{说明} \\
+\hline
+\texttt{MAX\_LINEAR\_SYSTEM\_DIM} & 8 & 线性方程组求解器最大维数 \\
+\hline
+\end{longtable}
+
+\subsection{矩阵存储约定}
+
+系数矩阵以行主序一维数组存储，元素 $a_{ij}$ 对应 \texttt{matrix[$i \cdot \text{maxDim} + j$]}。
+参数 \texttt{maxDim} 指定矩阵第二维大小（行步长），允许 \texttt{maxDim} $\geq$ \texttt{n}。
+右端向量 \texttt{rhs} 为长度 $n$ 的一维数组。
+
+% ============================================================
+%  9. 测试用例
+% ============================================================
+\section{测试用例}
+
+\subsection{正常测试用例}
+
+{\small
+\begin{longtable}{|C{0.6cm}|L{2.0cm}|L{5.0cm}|L{3.5cm}|L{3.5cm}|}
+\hline
+\textbf{编号} & \textbf{场景} & \textbf{输入} & \textbf{预期输出} & \textbf{验证准则} \\
+\hline
+\endfirsthead
+\hline
+\textbf{编号} & \textbf{场景} & \textbf{输入} & \textbf{预期输出} & \textbf{验证准则} \\
+\hline
+\endhead
+N-1 &
+$2{\times}2$ 一般矩阵 &
+$\mathbf{A}{=}[1,2;3,4]$, $\mathbf{b}{=}[5,11]$, $n{=}2$ &
+$\mathbf{x}{=}[1,2]$, 返回 \texttt{true} &
+$\|\mathbf{x} - \mathbf{x}^*\|_\infty < 10^{-10}$ \\
+\hline
+N-2 &
+$3{\times}3$ 经典系统 &
+$\mathbf{A}{=}[2,1,{-}1;{-}3,{-}1,2;{-}2,1,2]$, $\mathbf{b}{=}[8,{-}11,{-}3]$, $n{=}3$ &
+$\mathbf{x}{=}[2,3,{-}1]$, 返回 \texttt{true} &
+$\|\mathbf{x} - \mathbf{x}^*\|_\infty < 10^{-10}$ \\
+\hline
+N-3 &
+需要行交换 &
+$\mathbf{A}{=}[0,1;1,0]$, $\mathbf{b}{=}[3,5]$, $n{=}2$ &
+$\mathbf{x}{=}[5,3]$, 返回 \texttt{true} &
+$a_{00}{=}0$ 触发主元交换 \\
+\hline
+N-4 &
+$3{\times}3$ 对角矩阵 &
+$\mathbf{A}{=}\text{diag}(3,5,2)$, $\mathbf{b}{=}[9,15,6]$, $n{=}3$ &
+$\mathbf{x}{=}[3,3,3]$, 返回 \texttt{true} &
+$\|\mathbf{x} - \mathbf{x}^*\|_\infty < 10^{-10}$ \\
+\hline
+N-5 &
+$n{=}4$, maxDim${}=8$ &
+$\mathbf{A}{=}[1,1,1,1;0,1,1,1;0,0,1,1;0,0,0,1]$, $\mathbf{b}{=}[10,6,3,1]$ &
+$\mathbf{x}{=}[4,3,2,1]$, 返回 \texttt{true} &
+验证 maxDim $>$ n 跨步存储正确 \\
+\hline
+\end{longtable}
+}
+
+\vspace{6pt}
+{\small
+\begin{longtable}{|L{2.8cm}|L{12.5cm}|}
+\hline
+\multicolumn{2}{|c|}{\textbf{正常测试用例符号说明}} \\
+\hline
+\textbf{符号} & \textbf{含义} \\
+\hline
+$\mathbf{A}$ & 系数矩阵，以分号分隔行：$[a,b;c,d]$ 表示 $\bigl[\begin{smallmatrix}a & b \\ c & d\end{smallmatrix}\bigr]$ \\
+\hline
+$\mathbf{b}$ & 右端向量 rhs \\
+\hline
+$\mathbf{x}$ & 求解后 rhs 中存储的解向量 \\
+\hline
+$\mathbf{x}^*$ & 解析精确解 \\
+\hline
+$n$ & 方程组维数 \\
+\hline
+$\|\cdot\|_\infty$ & 向量无穷范数（各分量绝对值最大值） \\
+\hline
+\end{longtable}
+}
+
+\subsection{异常测试用例}
+
+{\small
+\begin{longtable}{|C{0.6cm}|L{1.8cm}|L{4.8cm}|L{3.8cm}|L{3.5cm}|}
+\hline
+\textbf{编号} & \textbf{场景} & \textbf{输入} & \textbf{预期输出/行为} & \textbf{验证准则} \\
+\hline
+\endfirsthead
+\hline
+\textbf{编号} & \textbf{场景} & \textbf{输入} & \textbf{预期输出/行为} & \textbf{验证准则} \\
+\hline
+\endhead
+A-1 &
+奇异矩阵 &
+$\mathbf{A}{=}[1,2;1,2]$（两行相同）, $\mathbf{b}{=}[3,3]$ &
+返回 \texttt{false} &
+主元消元后为零 \\
+\hline
+A-2 &
+近奇异矩阵 &
+$\mathbf{A}{=}[1,1;1,1{+}10^{-13}]$, $\mathbf{b}{=}[2,2]$ &
+返回 \texttt{false} &
+消元后主元 $|a_{11}^{(1)}| < \varepsilon$ \\
+\hline
+A-3 &
+矩阵含 NaN &
+$a_{00}{=}\text{NaN}$, 其余正常 &
+不崩溃; 返回 \texttt{false} 或 \texttt{true}（结果可能为 NaN） &
+函数正常返回 \\
+\hline
+A-4 &
+矩阵含 $+\infty$ &
+$a_{00}{=}+\infty$, 其余正常 &
+不崩溃; 可能返回 \texttt{true}（解含 $\infty$） &
+无浮点异常 \\
+\hline
+A-5 &
+rhs 含 NaN &
+$\mathbf{A}{=}\mathbf{I}_2$, $b_0{=}\text{NaN}$ &
+不崩溃; 解含 NaN &
+函数正常返回 \\
+\hline
+A-6 &
+全零矩阵 &
+$\mathbf{A}{=}\mathbf{0}_{2 \times 2}$, $\mathbf{b}{=}[1,1]$ &
+返回 \texttt{false} &
+首列主元 $= 0 < \varepsilon$ \\
+\hline
+A-7 &
+某行全零 &
+$\mathbf{A}{=}[1,2;0,0]$, $\mathbf{b}{=}[3,0]$ &
+返回 \texttt{false} &
+第2步主元为零 \\
+\hline
+A-8 &
+$n{=}1$, $a_{00}{=}0$ &
+$\mathbf{A}{=}[0]$, $\mathbf{b}{=}[5]$, $n{=}1$ &
+返回 \texttt{false} &
+单元素奇异 \\
+\hline
+A-9 &
+Hilbert 矩阵 &
+$a_{ij}{=}1/(i{+}j{+}1)$, $n{=}4$ &
+返回 \texttt{true}; 解精度可能退化 &
+条件数 $\kappa \approx 1.6 \times 10^{4}$ \\
+\hline
+A-10 &
+极端数量级 &
+$a_{00}{=}10^{15}$, $a_{11}{=}10^{-15}$, $n{=}2$ &
+返回 \texttt{true}; 解精度可能退化 &
+数值稳定性边界测试 \\
+\hline
+\end{longtable}
+}
+
+\vspace{6pt}
+{\small
+\begin{longtable}{|L{2.8cm}|L{12.5cm}|}
+\hline
+\multicolumn{2}{|c|}{\textbf{异常测试用例符号说明}} \\
+\hline
+\textbf{符号} & \textbf{含义} \\
+\hline
+$\mathbf{A}$ & 系数矩阵 matrix \\
+\hline
+$\mathbf{b}$ & 右端向量 rhs \\
+\hline
+$\mathbf{I}_n$ & $n \times n$ 单位矩阵 \\
+\hline
+$\mathbf{0}_{m \times n}$ & $m \times n$ 全零矩阵 \\
+\hline
+$a_{ij}$ & 矩阵第 $i$ 行第 $j$ 列元素（0-indexed） \\
+\hline
+$\varepsilon$ & 奇异判定阈值 $10^{-12}$ \\
+\hline
+$\kappa$ & 矩阵条件数 $\|\mathbf{A}\| \cdot \|\mathbf{A}^{-1}\|$ \\
+\hline
+NaN & IEEE 754 非数值 (Not a Number) \\
+\hline
+$+\infty$ & IEEE 754 正无穷大 \\
+\hline
+\end{longtable}
+}
+
+\end{document}

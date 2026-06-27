@@ -1,0 +1,42 @@
+{
+  "function_name": "rotateVectorByMinusYaw",
+  "description": "全局向量旋转到 ego frame 单元测试用例",
+  "test_cases": [
+    {
+      "id": "TC001_zero_yaw",
+      "vxGlobal": 1.0,
+      "vyGlobal": 2.0,
+      "yaw": 0.0,
+      "vxEgoExpected": 1.0,
+      "vyEgoExpected": 2.0,
+      "tolerance": 1e-09
+    },
+    {
+      "id": "TC002_pi_over_2",
+      "vxGlobal": 1.0,
+      "vyGlobal": 0.0,
+      "yaw": 1.5707963267948966,
+      "vxEgoExpected": 0.0,
+      "vyEgoExpected": -1.0,
+      "tolerance": 1e-09
+    },
+    {
+      "id": "TC003_minus_pi_over_2",
+      "vxGlobal": 1.0,
+      "vyGlobal": 0.0,
+      "yaw": -1.5707963267948966,
+      "vxEgoExpected": 0.0,
+      "vyEgoExpected": 1.0,
+      "tolerance": 1e-09
+    },
+    {
+      "id": "TC004_pi",
+      "vxGlobal": 3.0,
+      "vyGlobal": -2.0,
+      "yaw": 3.141592653589793,
+      "vxEgoExpected": -3.0,
+      "vyEgoExpected": 2.0,
+      "tolerance": 1e-09
+    }
+  ]
+}

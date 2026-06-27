@@ -1,0 +1,579 @@
+% !TEX program = xelatex
+\documentclass[a4paper,10pt]{article}
+\usepackage[UTF8,fontset=none]{ctex}
+\usepackage{xeCJK}
+\setCJKmainfont{Songti SC}
+\setCJKsansfont{STHeiti}
+\setCJKmonofont{Songti SC}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, fit}
+\usepackage{amsmath, amssymb}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{tabularx}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!60!black,
+  urlcolor=blue!60!black,
+  bookmarksnumbered=true
+}
+
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small predictBicycleState 函数设计文档}
+\fancyhead[R]{\small 内部公开}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+
+% ============================================================
+\begin{document}
+
+% ==================== 封面表格 ====================
+\thispagestyle{empty}
+
+\begin{center}
+{\CJKfamily{zhsong}\bfseries\Large 函数设计文档}
+\end{center}
+
+\vspace{8pt}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{|L{3.2cm}|L{4.5cm}|L{3.2cm}|L{4.5cm}|}
+\hline
+\textbf{函数英文名} & predictBicycleState &
+\textbf{函数中文名} & 自行车模型状态预测 \\
+\hline
+\textbf{函数类型} & 元件 (Element) &
+\textbf{版本} & 2.0 \\
+\hline
+\textbf{作者} & 许庆 &
+\textbf{日期} & 2026-06-26 \\
+\hline
+\textbf{联系方式} & \multicolumn{3}{l|}{18612426814~/~qingxu@tsinghua.edu.cn} \\
+\hline
+\textbf{密级} & 内部公开 &
+\textbf{AI辅助} & Cursor Agent (Claude Opus 4.6) \\
+\hline
+\end{tabular}
+\end{center}
+
+\vspace{12pt}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{|C{1cm}|C{1.8cm}|L{3.8cm}|C{1.5cm}|C{1.5cm}|C{3cm}|}
+\hline
+\multicolumn{6}{|c|}{\textbf{更改记录}} \\
+\hline
+\textbf{版本} & \textbf{日期} & \textbf{更改说明} & \textbf{作者} & \textbf{审核} & \textbf{辅助AI} \\
+\hline
+1.0 & 2026-06-20 & 初始版本 & 许庆 & --- & --- \\
+\hline
+2.0 & 2026-06-26 & 统一接口为结构体传参 & 许庆 & --- & Claude Opus 4.6 \\
+\hline
+\end{tabular}
+\end{center}
+
+\newpage
+
+% ==================== 目录 ====================
+\tableofcontents
+\newpage
+
+% ============================================================
+%  1. 函数需求
+% ============================================================
+\section{函数需求}
+
+\subsection{功能概述}
+
+\texttt{predictBicycleState} 基于运动学自行车模型，使用欧拉前向离散化方法
+预测下一时刻的车辆状态。给定当前车辆状态（位置、航向、速度）和控制输入
+（前轮转向角、加速度），以及时间步长和轴距，输出预测的下一时刻车辆状态。
+
+\subsection{输入/输出/返回值}
+
+\renewcommand{\arraystretch}{1.3}
+\begin{longtable}{|L{2.2cm}|L{3cm}|C{2.5cm}|L{7cm}|}
+\hline
+\textbf{方向} & \textbf{名称} & \textbf{类型} & \textbf{说明} \\
+\hline
+\endfirsthead
+\hline
+\textbf{方向} & \textbf{名称} & \textbf{类型} & \textbf{说明} \\
+\hline
+\endhead
+输入 & \texttt{state} & \texttt{VehicleState\&} & 当前车辆状态 $(x, y, \psi, v)$ \\
+\hline
+输入 & \texttt{control} & \texttt{ControlInput\&} & 控制输入 $(\delta, a)$ \\
+\hline
+输入 & \texttt{dt} & \texttt{double} & 时间步长 (s) \\
+\hline
+输入 & \texttt{wheelbase} & \texttt{double} & 前后轴距 $L$ (m) \\
+\hline
+返回值 & --- & \texttt{VehicleState} & 预测的下一时刻车辆状态 \\
+\hline
+\end{longtable}
+
+\subsection{功能需求}
+
+\begin{enumerate}[label=FR-\arabic*]
+  \item 根据运动学自行车模型的离散方程计算下一时刻的位置 $(x_{k+1}, y_{k+1})$。
+  \item 计算下一时刻的航向角 $\psi_{k+1}$。
+  \item 计算下一时刻的纵向速度 $v_{k+1}$。
+  \item 所有中间量（$\cos\psi$, $\sin\psi$, $\tan\delta$）仅计算一次。
+\end{enumerate}
+
+\subsection{非功能需求}
+
+\begin{enumerate}[label=NFR-\arabic*]
+  \item 不使用动态内存分配。
+  \item 仅依赖 \texttt{<cmath>} 标准库。
+  \item 纯函数：无内部状态，相同输入保证相同输出。
+\end{enumerate}
+
+% ============================================================
+%  2. 算法设计
+% ============================================================
+\section{算法设计}
+
+\subsection{运动学自行车模型}
+
+采用前轮转向运动学自行车模型（Kinematic Bicycle Model），
+将车辆简化为两轮模型，后轴中心为参考点。
+
+状态向量 $\mathbf{s} = [x, y, \psi, v]^{\!\top}$，控制向量 $\mathbf{u} = [\delta, a]^{\!\top}$。
+连续时间运动学方程为：
+\begin{equation}
+  \begin{cases}
+    \dot{x} = v \cos\psi \\[4pt]
+    \dot{y} = v \sin\psi \\[4pt]
+    \dot{\psi} = \dfrac{v \tan\delta}{L} \\[6pt]
+    \dot{v} = a
+  \end{cases}
+\end{equation}
+其中：
+\begin{itemize}
+  \item $x, y$：后轴中心在全局坐标系中的位置 (m)
+  \item $\psi$：航向角 (rad)，逆时针为正
+  \item $v$：纵向速度 (m/s)
+  \item $\delta$：前轮转向角 (rad)，左转为正
+  \item $a$：纵向加速度 (m/s\textsuperscript{2})
+  \item $L$：前后轴距 (m)
+\end{itemize}
+
+\subsection{欧拉前向离散化}
+
+采用欧拉前向差分（显式欧拉法），以时间步长 $\Delta t$ 进行离散化：
+\begin{equation}\label{eq:discrete}
+  \boxed{
+  \begin{aligned}
+    x_{k+1}   &= x_k + v_k \cos\psi_k \cdot \Delta t \\
+    y_{k+1}   &= y_k + v_k \sin\psi_k \cdot \Delta t \\
+    \psi_{k+1} &= \psi_k + \frac{v_k \tan\delta_k}{L} \cdot \Delta t \\
+    v_{k+1}   &= v_k + a_k \cdot \Delta t
+  \end{aligned}
+  }
+\end{equation}
+
+航向角变化率（横摆角速度）为：
+\begin{equation}
+  \dot{\psi} = \frac{v \tan\delta}{L}
+\end{equation}
+
+当 $\delta \to \pm\frac{\pi}{2}$ 时，$\tan\delta \to \pm\infty$，
+导致横摆角速度趋于无穷大。实际使用中上层控制器负责将转向角限制在合理范围内。
+
+% ============================================================
+%  3. 程序流程图
+% ============================================================
+\section{程序流程图}
+
+\begin{center}
+\begin{tikzpicture}[
+  node distance=0.9cm,
+  startstop/.style={rectangle, rounded corners, minimum width=3.5cm, minimum height=0.7cm,
+    text centered, draw=black, fill=blue!8, font=\small},
+  process/.style={rectangle, minimum width=5.5cm, minimum height=0.7cm,
+    text centered, draw=black, fill=orange!8, font=\small},
+  io/.style={trapezium, trapezium left angle=70, trapezium right angle=110,
+    minimum width=3.5cm, minimum height=0.7cm,
+    text centered, draw=black, fill=yellow!8, font=\small},
+  arrow/.style={-{Stealth[length=2.5mm]}, thick}
+]
+
+\node (start) [startstop] {开始};
+\node (input) [io, below=of start] {读入 state, control, dt, wheelbase};
+\node (trig) [process, below=of input] {计算 $\cos\psi$, $\sin\psi$, $\tan\delta$};
+\node (yawrate) [process, below=of trig] {计算 yawRate $= v \cdot \tan\delta / L$};
+\node (xnext) [process, below=of yawrate] {$x_{k+1} = x + v \cdot \cos\psi \cdot \Delta t$};
+\node (ynext) [process, below=of xnext] {$y_{k+1} = y + v \cdot \sin\psi \cdot \Delta t$};
+\node (yawnext) [process, below=of ynext] {$\psi_{k+1} = \psi + \text{yawRate} \cdot \Delta t$};
+\node (vnext) [process, below=of yawnext] {$v_{k+1} = v + a \cdot \Delta t$};
+\node (output) [io, below=of vnext] {输出 nextState$(x_{k+1}, y_{k+1}, \psi_{k+1}, v_{k+1})$};
+\node (stop) [startstop, below=of output] {结束};
+
+\draw [arrow] (start) -- (input);
+\draw [arrow] (input) -- (trig);
+\draw [arrow] (trig) -- (yawrate);
+\draw [arrow] (yawrate) -- (xnext);
+\draw [arrow] (xnext) -- (ynext);
+\draw [arrow] (ynext) -- (yawnext);
+\draw [arrow] (yawnext) -- (vnext);
+\draw [arrow] (vnext) -- (output);
+\draw [arrow] (output) -- (stop);
+
+\end{tikzpicture}
+\end{center}
+
+% ============================================================
+%  4. 函数接口与输入输出模块图
+% ============================================================
+\section{函数接口与输入输出模块图}
+
+\subsection{函数接口}
+
+\begin{verbatim}
+VehicleState predictBicycleState(const VehicleState& state,
+                                  const ControlInput& control,
+                                  double dt,
+                                  double wheelbase);
+\end{verbatim}
+
+\subsection{输入输出模块图}
+
+\begin{center}
+\begin{tikzpicture}[
+  core/.style={rectangle, draw=black, very thick, minimum width=5cm, minimum height=2cm,
+    text centered, fill=orange!10, font=\normalsize\bfseries, rounded corners=3pt},
+  iobox/.style={rectangle, draw=black, thick, minimum width=3.2cm, minimum height=0.6cm,
+    text centered, fill=yellow!10, font=\small},
+  arrow/.style={-{Stealth[length=2.5mm]}, thick}
+]
+
+\node (core) [core] {predictBicycleState};
+
+\node (in1) [iobox, left=3cm of core, yshift=1.2cm] {state (VehicleState)};
+\node (in2) [iobox, left=3cm of core, yshift=0.4cm] {control (ControlInput)};
+\node (in3) [iobox, left=3cm of core, yshift=-0.4cm] {dt (double)};
+\node (in4) [iobox, left=3cm of core, yshift=-1.2cm] {wheelbase (double)};
+
+\node (out1) [iobox, right=3cm of core] {VehicleState (nextState)};
+
+\draw [arrow] (in1) -- (core);
+\draw [arrow] (in2) -- (core);
+\draw [arrow] (in3) -- (core);
+\draw [arrow] (in4) -- (core);
+\draw [arrow] (core) -- (out1);
+
+\node [above=0.1cm of in1, font=\small\bfseries] {输入 (Input)};
+\node [above=0.1cm of out1, font=\small\bfseries] {输出 (Output)};
+
+\end{tikzpicture}
+\end{center}
+
+% ============================================================
+%  5. 函数诸元表
+% ============================================================
+\section{函数诸元表}
+
+\renewcommand{\arraystretch}{1.3}
+\begin{longtable}{|L{3.8cm}|L{11.5cm}|}
+\hline
+\textbf{属性} & \textbf{说明} \\
+\hline
+\endfirsthead
+\hline
+\textbf{属性} & \textbf{说明} \\
+\hline
+\endhead
+函数英文名 & \texttt{predictBicycleState} \\
+\hline
+函数中文名 & 自行车模型状态预测 \\
+\hline
+函数类型 & 元件 (Element) \\
+\hline
+版本 & 2.0 \\
+\hline
+源文件 & \texttt{src/cpp/predictBicycleState/predictBicycleState.cpp} \\
+\hline
+头文件 & \texttt{include/cpp/predictBicycleState/predictBicycleState.hpp} \\
+\hline
+命名空间 & \texttt{waypoint\_follow} \\
+\hline
+输入数量 & 4（state, control, dt, wheelbase） \\
+\hline
+输出数量 & 1（VehicleState 返回值） \\
+\hline
+参数数量 & 0 \\
+\hline
+状态数量 & 0（纯函数） \\
+\hline
+下级函数数量 & 0 \\
+\hline
+动态内存分配 & 无 \\
+\hline
+外部依赖 & \texttt{<cmath>}（\texttt{std::cos}, \texttt{std::sin}, \texttt{std::tan}） \\
+\hline
+算法类别 & 运动学模型 / 欧拉离散化 \\
+\hline
+时间复杂度 & $O(1)$ \\
+\hline
+\end{longtable}
+
+% ============================================================
+%  6. 函数架构图
+% ============================================================
+\section{函数架构图}
+
+\begin{center}
+\begin{tikzpicture}[
+  every node/.style={rectangle, draw, rounded corners=2pt, thick,
+    minimum height=0.65cm, text centered, font=\footnotesize,
+    fill=blue!5}
+]
+
+\node (main) {predictBicycleState};
+\node [below=0.6cm of main, draw=none, fill=none, font=\small\itshape] {无下级函数调用};
+
+\end{tikzpicture}
+\end{center}
+
+% ============================================================
+%  7. 下级函数需求
+% ============================================================
+\section{下级函数需求}
+
+本函数为叶子元件，无下级函数调用。
+
+% ============================================================
+%  8. 数据结构定义
+% ============================================================
+\section{数据结构定义}
+
+以下数据结构定义于 \texttt{waypointFollowTypes.hpp}，命名空间 \texttt{waypoint\_follow}。
+
+\subsection{VehicleState~---~车辆运动状态}
+
+\begin{longtable}{|L{3.5cm}|C{2cm}|L{9.5cm}|}
+\hline
+\textbf{成员} & \textbf{类型} & \textbf{说明} \\
+\hline
+\texttt{x} & double & 纵向位置 (m) \\
+\hline
+\texttt{y} & double & 横向位置 (m) \\
+\hline
+\texttt{yaw} & double & 航向角 (rad)，逆时针为正 \\
+\hline
+\texttt{v} & double & 纵向速度 (m/s) \\
+\hline
+\end{longtable}
+
+\subsection{ControlInput~---~车辆控制输入量}
+
+\begin{longtable}{|L{3.5cm}|C{2cm}|L{9.5cm}|}
+\hline
+\textbf{成员} & \textbf{类型} & \textbf{说明} \\
+\hline
+\texttt{steeringAngle} & double & 前轮转向角 (rad)，左转为正 \\
+\hline
+\texttt{acceleration} & double & 纵向加速度 (m/s\textsuperscript{2})，加速为正 \\
+\hline
+\end{longtable}
+
+% ============================================================
+%  9. 测试用例
+% ============================================================
+\section{测试用例}
+
+\subsection{正常测试用例}
+
+{\small
+\begin{longtable}{|C{0.6cm}|L{1.8cm}|L{5.0cm}|L{3.8cm}|L{3.5cm}|}
+\hline
+\textbf{编号} & \textbf{场景} & \textbf{输入} & \textbf{预期输出} & \textbf{验证准则} \\
+\hline
+\endfirsthead
+\hline
+\textbf{编号} & \textbf{场景} & \textbf{输入} & \textbf{预期输出} & \textbf{验证准则} \\
+\hline
+\endhead
+N-1 &
+直线行驶 &
+$\mathbf{s}{=}(0,0,0,10)$, $\delta{=}0$, $a{=}0$, $\Delta t{=}0.1$, $L{=}2.85$ &
+$(1.0, 0, 0, 10)$ &
+位置沿 $x$ 轴前进，$\psi$, $v$ 不变 \\
+\hline
+N-2 &
+恒定左转弯 &
+$\mathbf{s}{=}(0,0,0,10)$, $\delta{=}0.1$, $a{=}0$, $\Delta t{=}0.1$, $L{=}2.85$ &
+$(1.0, 0, 0.035, 10)$ &
+$\psi_{k+1} > 0$（左转），$v$ 不变 \\
+\hline
+N-3 &
+静止加速 &
+$\mathbf{s}{=}(0,0,0,0)$, $\delta{=}0$, $a{=}2$, $\Delta t{=}0.1$, $L{=}2.85$ &
+$(0, 0, 0, 0.2)$ &
+位置不变，$v_{k+1}{=}0.2$ \\
+\hline
+N-4 &
+制动减速 &
+$\mathbf{s}{=}(0,0,0,20)$, $\delta{=}0$, $a{=}{-}3$, $\Delta t{=}0.1$, $L{=}2.85$ &
+$(2.0, 0, 0, 19.7)$ &
+$v_{k+1} < v_k$, $x_{k+1} > 0$ \\
+\hline
+N-5 &
+斜向行驶 &
+$\mathbf{s}{=}(0,0,\pi/4,10)$, $\delta{=}0.05$, $a{=}0$, $\Delta t{=}0.1$, $L{=}2.85$ &
+$x_{k+1} \approx 0.707$, $y_{k+1} \approx 0.707$ &
+沿 $45^{\circ}$ 方向前进 \\
+\hline
+\end{longtable}
+}
+
+\vspace{6pt}
+{\small
+\begin{longtable}{|L{2.8cm}|L{12.5cm}|}
+\hline
+\multicolumn{2}{|c|}{\textbf{正常测试用例符号说明}} \\
+\hline
+\textbf{符号} & \textbf{含义} \\
+\hline
+$\mathbf{s}{=}(x,y,\psi,v)$ & 车辆状态 VehicleState \\
+\hline
+$\delta$ & 前轮转向角 steeringAngle (rad) \\
+\hline
+$a$ & 纵向加速度 acceleration (m/s\textsuperscript{2}) \\
+\hline
+$\Delta t$ & 时间步长 dt (s) \\
+\hline
+$L$ & 前后轴距 wheelbase (m) \\
+\hline
+$\psi$ & 航向角 yaw (rad) \\
+\hline
+$v$ & 纵向速度 (m/s) \\
+\hline
+\end{longtable}
+}
+
+\subsection{异常测试用例}
+
+{\small
+\begin{longtable}{|C{0.6cm}|L{1.8cm}|L{4.8cm}|L{3.8cm}|L{3.5cm}|}
+\hline
+\textbf{编号} & \textbf{场景} & \textbf{输入} & \textbf{预期输出/行为} & \textbf{验证准则} \\
+\hline
+\endfirsthead
+\hline
+\textbf{编号} & \textbf{场景} & \textbf{输入} & \textbf{预期输出/行为} & \textbf{验证准则} \\
+\hline
+\endhead
+A-1 &
+零速+转向 &
+$v{=}0$, $\delta{=}0.3$, $\Delta t{=}0.1$ &
+位置不变, $\psi$ 不变, $v{=}0$ &
+yawRate $= 0 \cdot \tan\delta / L = 0$ \\
+\hline
+A-2 &
+速度为 NaN &
+$v{=}\text{NaN}$, 其余正常 &
+不崩溃; 输出各分量可能为 NaN &
+函数正常返回 \\
+\hline
+A-3 &
+加速度 $+\infty$ &
+$a{=}+\infty$, $v{=}10$, $\Delta t{=}0.1$ &
+不崩溃; $v_{k+1}{=}+\infty$ &
+无浮点异常 \\
+\hline
+A-4 &
+$\delta{=}\pi/2$ &
+$\delta{=}\pi/2$, $v{=}10$, $L{=}2.85$ &
+$\tan(\pi/2) \to \infty$; $\dot\psi \to \infty$ &
+yawRate 为极大值或 $\pm\infty$ \\
+\hline
+A-5 &
+轴距为零 &
+$L{=}0$, $v{=}10$, $\delta{=}0.1$ &
+除零: $v\tan\delta/0 \to \pm\infty$ &
+$\psi_{k+1}$ 为 $\pm\infty$ 或 NaN \\
+\hline
+A-6 &
+负轴距 &
+$L{=}{-}2.85$, $v{=}10$, $\delta{=}0.1$ &
+航向变化符号反转 &
+$\dot\psi$ 符号与正轴距相反 \\
+\hline
+A-7 &
+航向角 NaN &
+$\psi{=}\text{NaN}$, 其余正常 &
+不崩溃; $\cos/\sin$ 输出 NaN &
+位置增量为 NaN \\
+\hline
+A-8 &
+极大速度 &
+$v{=}10^{15}$, $\Delta t{=}0.1$ &
+位移 $= 10^{14}$ (极大) &
+不溢出为 $\pm\infty$ \\
+\hline
+A-9 &
+负时间步长 &
+$\Delta t{=}{-}0.1$, $v{=}10$, $\delta{=}0$ &
+$x_{k+1} < x_k$（时间反向） &
+状态向反方向演化 \\
+\hline
+A-10 &
+零时间步长 &
+$\Delta t{=}0$, 其余正常 &
+状态完全不变 &
+$\mathbf{s}_{k+1} = \mathbf{s}_k$ \\
+\hline
+\end{longtable}
+}
+
+\vspace{6pt}
+{\small
+\begin{longtable}{|L{2.8cm}|L{12.5cm}|}
+\hline
+\multicolumn{2}{|c|}{\textbf{异常测试用例符号说明}} \\
+\hline
+\textbf{符号} & \textbf{含义} \\
+\hline
+$v$ & 纵向速度 (m/s) \\
+\hline
+$\delta$ & 前轮转向角 steeringAngle (rad) \\
+\hline
+$a$ & 纵向加速度 acceleration (m/s\textsuperscript{2}) \\
+\hline
+$\psi$ & 航向角 yaw (rad) \\
+\hline
+$L$ & 前后轴距 wheelbase (m) \\
+\hline
+$\Delta t$ & 时间步长 dt (s) \\
+\hline
+$\dot\psi$ & 横摆角速度 yawRate (rad/s) \\
+\hline
+NaN & IEEE 754 非数值 (Not a Number) \\
+\hline
+$+\infty$ & IEEE 754 正无穷大 \\
+\hline
+\end{longtable}
+}
+
+\end{document}

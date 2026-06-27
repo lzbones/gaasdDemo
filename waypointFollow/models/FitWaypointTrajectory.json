@@ -1,0 +1,37 @@
+{
+  "name": "FitWaypointTrajectory",
+  "includes": ["FitCubicPolynomial.hpp", "FuncModule.hpp", "waypointFollowTypes/waypointFollowTypes.hpp"],
+  "ports": {
+    "Input": [
+      "Waypoint waypoints[NUM_WAYPOINTS];",
+      "Int numWaypoints = NUM_WAYPOINTS;",
+      "Real egoSpeed = 0.0;"
+    ],
+    "Output": [
+      "FittedTrajectory trajectory;"
+    ],
+    "Param": [],
+    "State": [],
+    "Sub": [
+      "FitCubicPolynomial fitPoly;"
+    ]
+  },
+  "execution_sequence": [
+    {
+      "node": "fitPoly",
+      "type": "FitCubicPolynomial",
+      "inputs": {
+        "xData": "normalizedXCoords",
+        "yData": "yCoords",
+        "numPoints": "totalPoints"
+      }
+    }
+  ],
+  "outputs": {
+    "trajectory.poly": "fitPolyOut.coeffs",
+    "trajectory.xOffset": "xMin",
+    "trajectory.xScale": "xRange",
+    "trajectory.refSpeed": "computedRefSpeed",
+    "trajectory.valid": "valid && fitPolyOut.success"
+  }
+}

@@ -1,0 +1,169 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[UTF8]{ctex}
+\usepackage{geometry}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, trees}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{fancyhdr}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{hyperref}
+\geometry{left=2.5cm, right=2.5cm, top=3cm, bottom=2.5cm}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[C]{\small solveQpHildreth 函数设计文档}
+\fancyfoot[C]{\thepage}
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+\tikzset{
+    startstop/.style={ellipse, draw, fill=red!10, text width=8em, minimum height=0.9cm, align=center},
+    process/.style={rectangle, draw, fill=blue!5, text width=11em, minimum height=1.1cm, align=center},
+    decision/.style={diamond, draw, fill=green!10, text width=7em, minimum height=1cm, align=center},
+    arrow/.style={thick,->,>=Stealth}
+}
+\begin{document}
+\begin{titlepage}
+    \centering
+    {\Huge\textbf{solveQpHildreth（Hildreth 对偶坐标下降求解二维 QP）函数设计}\par}
+    \vspace{1.5cm}
+    \renewcommand{\arraystretch}{1.5}
+    \begin{tabular}{|l|l|l|l|}
+        \hline
+        文件密级 & 内部公开 & 编号 & CBF-DOC-SOLVEQPHILDRETH \\ \hline
+        版本 & V1.0 & 内容 & solveQpHildreth（Hildreth 对偶坐标下降求解二维 QP）函数设计 \\ \hline
+        设计 & 许庆 & 联系方式 & 18612426814 / qingxu@tsinghua.edu.cn \\ \hline
+        审核 & - & 审批 & - \\ \hline
+        发布日期 & 2026 年 6 月 26 日 & & \\ \hline
+    \end{tabular}
+    \vspace{1.5cm}
+    \section*{文件更改记录}
+    \begin{longtable}{|c|c|p{4cm}|c|c|c|c|}
+        \hline
+        日期 & 版本号 & 修订说明 & 辅助AI & 修订 & 审核 & 审批 \\ \hline
+        2026-6-26 & V1.0 & 初次设计 & Claude-Opus-4.7 & 许庆 & - & - \\ \hline
+    \end{longtable}
+\end{titlepage}
+\tableofcontents
+\newpage
+\section{公有函数设计}
+\subsection{solveQpHildreth（Hildreth 对偶坐标下降求解二维 QP）函数设计}
+\subsubsection{函数需求}
+\par 本函数实现 \textbf{Hildreth 对偶坐标下降求解二维 QP}。其在 CBF 自动驾驶安全控制流水线中承担如下职责：求解 (1/2)u\textasciicircum{}T Q u + c\textasciicircum{}T u s.t. Au<=b 的二维 QP。
+\par 头文件路径：\texttt{include/cpp/solveQpHildreth/solveQpHildreth.hpp}；源文件路径：\texttt{src/cpp/solveQpHildreth/solveQpHildreth.cpp}。
+\subsubsection{算法设计}
+\par 本函数核心数学表达式如下：
+\begin{equation}
+u^* = \arg\min_{u} \tfrac{1}{2}u^\top Q u + c^\top u\quad s.t.\ Au\le b
+\end{equation}
+\par 实现步骤：
+\begin{enumerate}
+  \item \textbf{init\_uncons}: 无约束最优 u = -Q\textasciicircum{}-1 c
+  \item \textbf{check\_feas}: 若所有 Au<=b 已成立则直接返回
+  \item \textbf{hildreth\_iter}: 对偶变量逐分量更新 $\textbackslash{}lambda$\_i = max(0, $\textbackslash{}lambda$\_i + (b\_i - A\_i u)/H\_ii)
+  \item \textbf{primal\_recover}: u = -Q\textasciicircum{}-1 (c + A\textasciicircum{}T $\textbackslash{}lambda$)
+\end{enumerate}
+\subsubsection{程序流程图}
+\begin{figure}[h]
+    \centering
+    \begin{tikzpicture}[node distance=1.6cm]
+    \node (start) [startstop] {开始};
+    \node (p0) [process, below of=start, yshift=-0.3cm] {无约束最优 u = -Q\textasciicircum{}-1 c};
+    \node (p1) [process, below of=p0, yshift=-0.3cm] {若所有 Au<=b 已成立则直接返回};
+    \node (p2) [process, below of=p1, yshift=-0.3cm] {对偶变量逐分量更新 $\textbackslash{}lambda$\_i = max(0, $\textbackslash{}lambda$\_i + (b\_i - A\_i u)/H\_ii)};
+    \node (p3) [process, below of=p2, yshift=-0.3cm] {u = -Q\textasciicircum{}-1 (c + A\textasciicircum{}T $\textbackslash{}lambda$)};
+    \node (end) [startstop, below of=p3, yshift=-0.3cm] {返回 / 写回输出};
+    \draw [arrow] (start) -- (p0);
+    \draw [arrow] (p0) -- (p1);
+    \draw [arrow] (p1) -- (p2);
+    \draw [arrow] (p2) -- (p3);
+    \draw [arrow] (p3) -- (end);
+
+    \end{tikzpicture}
+    \caption{solveQpHildreth 函数程序流程图}
+    \label{fig:flow_solveQpHildreth}
+\end{figure}
+\subsubsection{函数接口}
+\par 输入参数列表：
+\begin{itemize}
+  \item \texttt{qDiagA, qDiagT} (double) -- Q 对角元素
+  \item \texttt{c} (double[2]) -- 线性项
+  \item \texttt{aMatRowMajor} (double*) -- 约束矩阵 A（行优先）
+  \item \texttt{bVec} (double*) -- 约束右端 b
+  \item \texttt{rowCount} (size\_t) -- 实际约束行数
+  \item \texttt{maxIter} (size\_t) -- 最大迭代步
+  \item \texttt{tolerance} (double) -- 收敛阈值
+\end{itemize}
+\par 输出参数列表：
+\begin{itemize}
+  \item \texttt{uSolution} (double[2]) -- QP 最优解
+  \item \texttt{iterUsed} (size\_t*) -- 实际迭代步
+  \item \texttt{return} (bool) -- 是否可行
+\end{itemize}
+\subsubsection{输入输出模块图}
+\begin{figure}[h]
+    \centering
+    \begin{tikzpicture}[>=Stealth]
+        \node[draw, rectangle, minimum width=4.5cm, minimum height=2cm, fill=blue!5] (func) at (0,0) {\large{\textbf{solveQpHildreth}}};
+        \draw[->, thick] (-3.5,0.4) -- node[above]{I (输入)} (-2.3,0.4);
+        \draw[->, thick] (2.3,0.4) -- node[above]{O (输出)} (3.5,0.4);
+        \draw[->, thick] (0,-1.0) -- node[right]{f (返回)} (0,-2.0);
+    \end{tikzpicture}
+    \caption{solveQpHildreth 函数输入输出模块图}
+    \label{fig:io_solveQpHildreth}
+\end{figure}
+\subsubsection{函数诸元表}
+\begin{table}[h]
+    \centering
+    \caption{solveQpHildreth 函数诸元表}
+    \label{tab:meta_solveQpHildreth}
+    \begin{tabular}{|c|c|c|c|c|}
+        \hline
+        中文名 & 英文名 & 性质 & 级别 & 入库 \\ \hline
+        Hildreth 对偶坐标下降求解二维 QP & solveQpHildreth & 元件 & 应用层 & 是 \\ \hline
+    \end{tabular}
+\end{table}
+\subsubsection{函数架构}
+\par 本函数为\textbf{元件}（叶子节点），无下级函数依赖。
+
+\subsubsection{测试用例表}
+\noindent\textbf{正常场景测试用例如表~\ref{tab:normal_solveQpHildreth} 所示：}
+\begin{table}[h]
+\centering
+\caption{solveQpHildreth 正常场景测试用例}
+\label{tab:normal_solveQpHildreth}
+\begin{tabular}{|c|p{3.5cm}|p{3.5cm}|p{3.5cm}|}
+\hline
+ID & 描述 & 输入 & 期望输出 \\ \hline
+  TC1 & 正常用例 1 & 见 cases.json & 见 cases.json \\ \hline
+  TC2 & 正常用例 2 & 见 cases.json & 见 cases.json \\ \hline
+  TC3 & 正常用例 3 & 见 cases.json & 见 cases.json \\ \hline
+  TC4 & 正常用例 4 & 见 cases.json & 见 cases.json \\ \hline
+  TC5 & 正常用例 5 & 见 cases.json & 见 cases.json \\ \hline
+\end{tabular}
+\end{table}
+
+\noindent\textbf{异常场景测试用例如表~\ref{tab:abnormal_solveQpHildreth} 所示：}
+\begin{table}[h]
+\centering
+\caption{solveQpHildreth 异常场景测试用例}
+\label{tab:abnormal_solveQpHildreth}
+\begin{tabular}{|c|p{3.5cm}|p{3.5cm}|p{3.5cm}|}
+\hline
+ID & 描述 & 输入 & 期望输出 \\ \hline
+  EC1 & NaN 输入 & 任一标量=NaN & 输出含 NaN \\ \hline
+  EC2 & Inf 输入 & 任一标量=Inf & 输出含 Inf \\ \hline
+  EC3 & 数学边界 & 极限值 & 结果有界或返回 false \\ \hline
+  EC4 & QP 不可行 & 约束相互冲突 & 返回 feasible=false \\ \hline
+\end{tabular}
+\end{table}
+
+\noindent\textbf{符号说明：}
+\begin{itemize}
+  \item dx, dy: ego-frame 相对位置 (m)
+  \item v\_rx, v\_ry: ego-frame 相对速度 (m/s)
+  \item r: 安全圆半径 (m)
+  \item B: Barrier 函数值
+\end{itemize}
+\end{document}

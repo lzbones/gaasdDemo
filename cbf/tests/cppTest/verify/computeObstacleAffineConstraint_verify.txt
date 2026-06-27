@@ -1,0 +1,35 @@
+═══════════════════════════════════════
+  computeObstacleAffineConstraint 代码规范验证报告
+═══════════════════════════════════════
+验证依据：CppCoding/01_cpp_coding.md - C++ 面向过程编程规范
+
+【代码结构验证】
+[x] 面向过程风格：未使用类（class）作为业务建模主体
+[x] One Function Per File：每文件仅一个函数定义
+[x] 物理文件结构正确：src/cpp/computeObstacleAffineConstraint/, include/cpp/computeObstacleAffineConstraint/
+
+【命名规范验证】
+[x] 函数/变量：小驼峰 (lowerCamelCase)
+[x] 结构体：大驼峰 (UpperCamelCase, 例: EgoState/ObstacleState/CbfParam)
+[x] 命名空间：小写下划线 (cbf)
+[x] 宏/常量：constexpr 无幻数
+
+【代码健壮性验证】
+[x] SSA：局部变量使用 const 且声明时初始化
+[x] 单一出口原则：仅末尾一个 return
+[x] #pragma once 头文件保护
+
+【模块要素验证】
+[x] 输入 (input)  清晰界定：函数签名通过 const 引用 / 值传递
+[x] 输出 (output) 清晰界定：返回值或输出引用参数
+[x] 状态 (state)  无（纯函数）
+[x] 参数 (param)  通过 CbfParam 显式传入
+
+【文档规范验证】
+[x] 中文注释
+[x] Doxygen 头部完整 (@brief @cn_name @tag_level0~3)
+[x] 缩进 2 空格
+[x] 无幻数
+
+验证结论：☑ 通过
+═══════════════════════════════════════

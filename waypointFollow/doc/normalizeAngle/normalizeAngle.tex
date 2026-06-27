@@ -1,0 +1,449 @@
+% !TEX program = xelatex
+\documentclass[a4paper,10pt]{article}
+\usepackage[UTF8,fontset=none]{ctex}
+\usepackage{xeCJK}
+\setCJKmainfont{Songti SC}
+\setCJKsansfont{STHeiti}
+\setCJKmonofont{Songti SC}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, fit}
+\usepackage{amsmath, amssymb}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{tabularx}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!60!black,
+  urlcolor=blue!60!black,
+  bookmarksnumbered=true
+}
+
+% 页眉页脚
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small normalizeAngle~---~函数设计文档}
+\fancyhead[R]{\small 内部公开}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% 层级编号
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+
+% 表格列宽辅助
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+
+% ============================================================
+\begin{document}
+
+% ==================== 封面表格 ====================
+\thispagestyle{empty}
+
+\begin{center}
+{\CJKfamily{zhsong}\bfseries\Large 函数设计文档}
+\end{center}
+
+\vspace{8pt}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{|L{3.2cm}|L{4.5cm}|L{3.2cm}|L{4.5cm}|}
+\hline
+\textbf{函数英文名} & normalizeAngle &
+\textbf{函数中文名} & 角度归一化 \\
+\hline
+\textbf{函数类型} & 元件 (Element) &
+\textbf{版本} & 2.0 \\
+\hline
+\textbf{作者} & 许庆 &
+\textbf{日期} & 2026-06-26 \\
+\hline
+\textbf{联系方式} & \multicolumn{3}{l|}{18612426814~/~qingxu@tsinghua.edu.cn} \\
+\hline
+\textbf{密级} & 内部公开 &
+\textbf{AI辅助} & Cursor Agent (Claude Opus 4.6) \\
+\hline
+\end{tabular}
+\end{center}
+
+\vspace{12pt}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{|C{1.2cm}|C{2cm}|L{5cm}|C{2cm}|C{2cm}|}
+\hline
+\multicolumn{5}{|c|}{\textbf{更改记录}} \\
+\hline
+\textbf{版本} & \textbf{日期} & \textbf{更改说明} & \textbf{作者} & \textbf{辅助AI} \\
+\hline
+2.0 & 2026-06-26 & 初始版本 & 许庆 & Claude Opus 4.6 \\
+\hline
+\end{tabular}
+\end{center}
+
+\newpage
+
+% ==================== 目录 ====================
+\tableofcontents
+\newpage
+
+% ============================================================
+%  1. 函数需求
+% ============================================================
+\section{函数需求}
+
+\subsection{功能概述}
+
+\texttt{normalizeAngle} 将任意角度值归一化到 $[-\pi, \pi]$ 区间。
+利用 $\text{atan2}(\sin\theta, \cos\theta)$ 的数学性质实现角度的周期折叠。
+
+\subsection{输入/输出/返回值}
+
+\renewcommand{\arraystretch}{1.3}
+\begin{longtable}{|C{1.5cm}|L{3.5cm}|C{2cm}|L{8cm}|}
+\hline
+\textbf{类别} & \textbf{名称} & \textbf{类型} & \textbf{说明} \\
+\hline
+\endfirsthead
+\hline
+\textbf{类别} & \textbf{名称} & \textbf{类型} & \textbf{说明} \\
+\hline
+\endhead
+输入 & \texttt{angle} & double & 待归一化角度 (rad)，取值范围任意 \\
+\hline
+返回值 & --- & double & 归一化后的角度 (rad)，$\in [-\pi, \pi]$ \\
+\hline
+\end{longtable}
+
+% ============================================================
+%  1.2 算法设计
+% ============================================================
+\subsection{算法设计}
+
+角度归一化的核心公式为：
+\begin{equation}
+  \text{result} = \text{atan2}\!\big(\sin(\theta),\; \cos(\theta)\big)
+\end{equation}
+
+\textbf{数学原理}：对于任意角度 $\theta$，$(\cos\theta, \sin\theta)$ 是单位圆上的一点，
+$\text{atan2}$ 函数返回该点对应的角度，值域恒为 $(-\pi, \pi]$。
+这等价于将角度模 $2\pi$ 后映射到 $[-\pi, \pi]$：
+\begin{equation}
+  \text{result} \equiv \theta \pmod{2\pi}, \quad \text{result} \in [-\pi, \pi]
+\end{equation}
+
+该方法的优点：
+\begin{itemize}
+  \item 无需循环或条件分支，单次三角函数调用完成
+  \item 对大角度值（多圈）同样有效
+  \item 自动处理符号和象限
+\end{itemize}
+
+% ============================================================
+%  1.3 程序流程图
+% ============================================================
+\subsection{程序流程图}
+
+\begin{center}
+\begin{tikzpicture}[
+  node distance=1.0cm,
+  startstop/.style={rectangle, rounded corners, minimum width=3.5cm, minimum height=0.7cm,
+    text centered, draw=black, fill=blue!8, font=\small},
+  process/.style={rectangle, minimum width=5cm, minimum height=0.7cm,
+    text centered, draw=black, fill=orange!8, font=\small},
+  arrow/.style={-{Stealth[length=2.5mm]}, thick}
+]
+
+\node (start) [startstop] {开始};
+\node (input) [process, below=of start] {读入 angle};
+\node (calc) [process, below=of input] {result = atan2(sin(angle), cos(angle))};
+\node (output) [process, below=of calc] {返回 result};
+\node (stop) [startstop, below=of output] {结束};
+
+\draw [arrow] (start) -- (input);
+\draw [arrow] (input) -- (calc);
+\draw [arrow] (calc) -- (output);
+\draw [arrow] (output) -- (stop);
+
+\end{tikzpicture}
+\end{center}
+
+% ============================================================
+%  1.4 函数接口
+% ============================================================
+\subsection{函数接口}
+
+\begin{verbatim}
+double normalizeAngle(const double angle);
+\end{verbatim}
+
+% ============================================================
+%  1.5 输入输出模块图
+% ============================================================
+\subsection{输入输出模块图}
+
+\begin{center}
+\begin{tikzpicture}[
+  box/.style={rectangle, draw=black, thick, minimum width=3.0cm, minimum height=0.6cm,
+    text centered, fill=yellow!10, font=\small},
+  core/.style={rectangle, draw=black, very thick, minimum width=4.5cm, minimum height=1.5cm,
+    text centered, fill=orange!10, font=\normalsize\bfseries, rounded corners=3pt},
+  arrow/.style={-{Stealth[length=2.5mm]}, thick}
+]
+
+\node (core) [core] {normalizeAngle};
+
+\node (in1) [box, left=3cm of core] {angle (rad)};
+
+\node (out1) [box, right=3cm of core] {result (rad)};
+
+\draw [arrow] (in1) -- (core);
+\draw [arrow] (core) -- (out1);
+
+\node [above=0.1cm of in1, font=\small\bfseries] {输入 (Input)};
+\node [above=0.1cm of out1, font=\small\bfseries] {输出 (Output)};
+
+\end{tikzpicture}
+\end{center}
+
+% ============================================================
+%  1.6 函数诸元表
+% ============================================================
+\subsection{函数诸元表}
+
+\renewcommand{\arraystretch}{1.3}
+\begin{longtable}{|L{3.8cm}|L{11.5cm}|}
+\hline
+\textbf{属性} & \textbf{说明} \\
+\hline
+\endfirsthead
+\hline
+\textbf{属性} & \textbf{说明} \\
+\hline
+\endhead
+函数英文名 & \texttt{normalizeAngle} \\
+\hline
+函数中文名 & 角度归一化 \\
+\hline
+函数类型 & 元件 (Element) \\
+\hline
+版本 & 2.0 \\
+\hline
+源文件 & \texttt{src/cpp/normalizeAngle/normalizeAngle.cpp} \\
+\hline
+头文件 & \texttt{include/cpp/normalizeAngle/normalizeAngle.hpp} \\
+\hline
+命名空间 & \texttt{waypoint\_follow} \\
+\hline
+输入数量 & 1（angle） \\
+\hline
+输出数量 & 1（返回值 double） \\
+\hline
+参数数量 & 0 \\
+\hline
+状态数量 & 0（无状态，纯函数） \\
+\hline
+下级函数数量 & 0 \\
+\hline
+动态内存分配 & 无 \\
+\hline
+外部依赖 & \texttt{<cmath>}（std::sin, std::cos, std::atan2） \\
+\hline
+算法类别 & 角度处理 / 三角函数映射 \\
+\hline
+\end{longtable}
+
+% ============================================================
+%  1.7 函数架构
+% ============================================================
+\subsection{函数架构}
+
+无下级函数调用。\texttt{normalizeAngle} 为叶节点元件，仅调用标准库三角函数。
+
+% ============================================================
+%  1.8 数据结构定义
+% ============================================================
+\subsection{数据结构定义}
+
+无自定义数据结构。输入输出均为 \texttt{double} 标量。
+
+% ============================================================
+%  1.9 测试用例
+% ============================================================
+\subsection{测试用例}
+
+\subsubsection{正常测试用例}
+
+{\small
+\begin{longtable}{|C{0.6cm}|L{2.2cm}|L{4.5cm}|L{3.5cm}|L{3.8cm}|}
+\hline
+\textbf{编号} & \textbf{场景} & \textbf{输入} & \textbf{预期输出} & \textbf{验证准则} \\
+\hline
+\endfirsthead
+\hline
+\textbf{编号} & \textbf{场景} & \textbf{输入} & \textbf{预期输出} & \textbf{验证准则} \\
+\hline
+\endhead
+N-1 &
+零角度 &
+$\theta{=}0$ &
+$r = 0$ &
+$|r| < \epsilon$ \\
+\hline
+N-2 &
+正角度（区间内） &
+$\theta{=}\pi/4$ &
+$r = \pi/4$ &
+$|r - \pi/4| < \epsilon$ \\
+\hline
+N-3 &
+负角度（区间内） &
+$\theta{=}{-}\pi/2$ &
+$r = -\pi/2$ &
+$|r + \pi/2| < \epsilon$ \\
+\hline
+N-4 &
+超出上限（$3\pi/2$） &
+$\theta{=}3\pi/2$ &
+$r = -\pi/2$ &
+$|r + \pi/2| < \epsilon$ \\
+\hline
+N-5 &
+多圈正角度 &
+$\theta{=}5\pi$ &
+$r = \pi$（或 $-\pi$） &
+$|r| - \pi < \epsilon$ \\
+\hline
+\end{longtable}
+}
+
+\vspace{6pt}
+{\small
+\begin{longtable}{|L{2.5cm}|L{13cm}|}
+\hline
+\multicolumn{2}{|c|}{\textbf{正常测试用例符号说明}} \\
+\hline
+\textbf{符号} & \textbf{含义} \\
+\hline
+$\theta$ & 输入角度 angle (rad) \\
+\hline
+$r$ & 返回值 result (rad) \\
+\hline
+$\epsilon$ & 浮点误差容限，取 $10^{-12}$ \\
+\hline
+$\pi$ & 圆周率 $\approx 3.14159265358979$ \\
+\hline
+\end{longtable}
+}
+
+\subsubsection{异常测试用例}
+
+{\small
+\begin{longtable}{|C{0.6cm}|L{2.0cm}|L{4.2cm}|L{4.0cm}|L{3.8cm}|}
+\hline
+\textbf{编号} & \textbf{场景} & \textbf{输入} & \textbf{预期输出/行为} & \textbf{验证准则} \\
+\hline
+\endfirsthead
+\hline
+\textbf{编号} & \textbf{场景} & \textbf{输入} & \textbf{预期输出/行为} & \textbf{验证准则} \\
+\hline
+\endhead
+A-1 &
+NaN 输入 &
+$\theta{=}\text{NaN}$ &
+$r = \text{NaN}$ &
+sin/cos(NaN) = NaN, atan2(NaN,NaN) = NaN \\
+\hline
+A-2 &
+$+\infty$ 输入 &
+$\theta{=}+\infty$ &
+$r = \text{NaN}$ &
+sin($\infty$) 为 NaN（C标准） \\
+\hline
+A-3 &
+$-\infty$ 输入 &
+$\theta{=}-\infty$ &
+$r = \text{NaN}$ &
+sin($-\infty$) 为 NaN（C标准） \\
+\hline
+A-4 &
+极大正值 &
+$\theta{=}1.0\!\times\!10^{15}$ &
+$r \in [-\pi, \pi]$ &
+结果在有效范围内 \\
+\hline
+A-5 &
+极大负值 &
+$\theta{=}{-}1.0\!\times\!10^{15}$ &
+$r \in [-\pi, \pi]$ &
+结果在有效范围内 \\
+\hline
+A-6 &
+精确 $\pi$ 边界 &
+$\theta{=}\pi$ &
+$r = \pi$ &
+$|r - \pi| < \epsilon$ \\
+\hline
+A-7 &
+精确 $-\pi$ 边界 &
+$\theta{=}{-}\pi$ &
+$r = -\pi$（或 $\pi$） &
+$|r| - \pi < \epsilon$ \\
+\hline
+A-8 &
+略超 $\pi$ &
+$\theta{=}\pi + 10^{-14}$ &
+$r \approx -\pi$（翻转） &
+$|r + \pi| < 10^{-10}$ \\
+\hline
+A-9 &
+subnormal 值 &
+$\theta{=}5\!\times\!10^{-324}$ &
+$r \approx 0$ &
+$|r| < \epsilon$ \\
+\hline
+A-10 &
+接近 DBL\_MAX &
+$\theta{=}1.7\!\times\!10^{308}$ &
+$r \in [-\pi, \pi]$ 或 NaN &
+函数不崩溃 \\
+\hline
+\end{longtable}
+}
+
+\vspace{6pt}
+{\small
+\begin{longtable}{|L{2.5cm}|L{13cm}|}
+\hline
+\multicolumn{2}{|c|}{\textbf{异常测试用例符号说明}} \\
+\hline
+\textbf{符号} & \textbf{含义} \\
+\hline
+$\theta$ & 输入角度 angle (rad) \\
+\hline
+$r$ & 返回值 result (rad) \\
+\hline
+NaN & IEEE 754 非数值 (Not a Number) \\
+\hline
+$+\infty$/$-\infty$ & IEEE 754 正/负无穷大 \\
+\hline
+$\epsilon$ & 浮点误差容限，取 $10^{-12}$ \\
+\hline
+subnormal & 非规格化浮点数（极接近零） \\
+\hline
+DBL\_MAX & double 最大有限值 $\approx 1.7\!\times\!10^{308}$ \\
+\hline
+\end{longtable}
+}
+
+\end{document}

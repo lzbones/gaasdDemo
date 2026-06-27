@@ -1,0 +1,54 @@
+{
+  "name": "MpcComputeCost",
+  "includes": ["PredictBicycleState.hpp", "EvaluatePolynomial.hpp", "EvaluatePolynomialSlope.hpp", "NormalizeAngle.hpp", "FuncModule.hpp", "waypointFollowTypes/waypointFollowTypes.hpp"],
+  "ports": {
+    "Input": [
+      "ControlInput controlSequence[MAX_CONTROL_HORIZON];",
+      "VehicleState initialState;",
+      "FittedTrajectory trajectory;",
+      "ControlInput prevAppliedControl;"
+    ],
+    "Output": [
+      "Real totalCost = 0.0;"
+    ],
+    "Param": [
+      "MpcParam mpcParam;"
+    ],
+    "State": [],
+    "Sub": [
+      "PredictBicycleState predictState;",
+      "EvaluatePolynomial evalPoly;",
+      "EvaluatePolynomialSlope evalSlope;",
+      "NormalizeAngle normAngle;"
+    ]
+  },
+  "execution_sequence": [
+    {
+      "node": "predictState",
+      "type": "PredictBicycleState",
+      "inputs": {"x": "cx", "y": "cy", "yaw": "cyaw", "v": "cv", "steeringAngle": "ctrl.steeringAngle", "acceleration": "ctrl.acceleration"},
+      "loop": "k in [0, predictionHorizon)"
+    },
+    {
+      "node": "evalPoly",
+      "type": "EvaluatePolynomial",
+      "inputs": {"coeffs": "input.trajectory.poly", "x": "xNormalized"},
+      "loop": "k in [0, predictionHorizon)"
+    },
+    {
+      "node": "evalSlope",
+      "type": "EvaluatePolynomialSlope",
+      "inputs": {"coeffs": "input.trajectory.poly", "x": "xNormalized"},
+      "loop": "k in [0, predictionHorizon)"
+    },
+    {
+      "node": "normAngle",
+      "type": "NormalizeAngle",
+      "inputs": {"angle": "yawError"},
+      "loop": "k in [0, predictionHorizon)"
+    }
+  ],
+  "outputs": {
+    "totalCost": "sumOfWeightedErrors"
+  }
+}

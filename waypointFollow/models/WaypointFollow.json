@@ -1,0 +1,51 @@
+{
+  "name": "WaypointFollow",
+  "includes": ["FitWaypointTrajectory.hpp", "MpcOptimize.hpp", "ClampValue.hpp", "FuncModule.hpp", "waypointFollowTypes/waypointFollowTypes.hpp"],
+  "ports": {
+    "Input": [
+      "Real egoSpeed = 0.0;",
+      "Real currentSteeringWheelAngle = 0.0;",
+      "Waypoint waypoints[NUM_WAYPOINTS];"
+    ],
+    "Output": [
+      "Real steeringWheelAngle = 0.0;",
+      "Real frontWheelAngle = 0.0;",
+      "Real acceleration = 0.0;"
+    ],
+    "Param": [
+      "MpcParam mpcParam;",
+      "Real steeringRatio = 15.0;"
+    ],
+    "State": [
+      "ControlInput prevControlSequence[MAX_CONTROL_HORIZON];",
+      "ControlInput lastAppliedControl;",
+      "Bool initialized = false;"
+    ],
+    "Sub": [
+      "FitWaypointTrajectory fitTrajectory;",
+      "MpcOptimize mpcOptimize;",
+      "ClampValue clampVal;"
+    ]
+  },
+  "execution_sequence": [
+    {
+      "node": "fitTrajectory",
+      "type": "FitWaypointTrajectory",
+      "inputs": {"waypoints": "input.waypoints", "numWaypoints": "NUM_WAYPOINTS", "egoSpeed": "input.egoSpeed"}
+    },
+    {
+      "node": "mpcOptimize",
+      "type": "MpcOptimize",
+      "inputs": {"initialState": "{0,0,0,egoSpeed}", "trajectory": "fitTrajectoryOut.trajectory", "warmStartSequence": "state_.prevControlSequence", "prevAppliedControl": "state_.lastAppliedControl"}
+    },
+    {
+      "node": "clampVal",
+      "type": "ClampValue",
+      "inputs": {"value": "mpcOptimizeOut.optimalSequence[0].*ratio", "minVal": "-maxLimit", "maxVal": "maxLimit"}
+    }
+  ],
+  "outputs": {
+    "steeringWheelAngle": "clampedSteering",
+    "acceleration": "clampedAccel"
+  }
+}

@@ -1,0 +1,466 @@
+% !TEX program = xelatex
+\documentclass[a4paper,10pt]{article}
+\usepackage[UTF8,fontset=none]{ctex}
+\usepackage{xeCJK}
+\setCJKmainfont{Songti SC}
+\setCJKsansfont{STHeiti}
+\setCJKmonofont{Songti SC}
+\usepackage[margin=2.2cm]{geometry}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, fit}
+\usepackage{amsmath, amssymb}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{booktabs}
+\usepackage{multirow}
+\usepackage{enumitem}
+\usepackage{fancyhdr}
+\usepackage{titlesec}
+\usepackage{hyperref}
+\usepackage{xcolor}
+\usepackage{tabularx}
+
+\hypersetup{
+  colorlinks=true,
+  linkcolor=blue!60!black,
+  urlcolor=blue!60!black,
+  bookmarksnumbered=true
+}
+
+% 页眉页脚
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small evaluatePolynomialSlope~---~函数设计文档}
+\fancyhead[R]{\small 内部公开}
+\fancyfoot[C]{\thepage}
+\renewcommand{\headrulewidth}{0.4pt}
+
+% 层级编号
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+
+% 表格列宽辅助
+\newcolumntype{L}[1]{>{\raggedright\arraybackslash}p{#1}}
+\newcolumntype{C}[1]{>{\centering\arraybackslash}p{#1}}
+
+% ============================================================
+\begin{document}
+
+% ==================== 封面表格 ====================
+\thispagestyle{empty}
+
+\begin{center}
+{\CJKfamily{zhsong}\bfseries\Large 函数设计文档}
+\end{center}
+
+\vspace{8pt}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.5}
+\begin{tabular}{|L{3.2cm}|L{4.5cm}|L{3.2cm}|L{4.5cm}|}
+\hline
+\textbf{函数英文名} & evaluatePolynomialSlope &
+\textbf{函数中文名} & 多项式斜率求值 \\
+\hline
+\textbf{函数类型} & 元件 (Element) &
+\textbf{版本} & 2.0 \\
+\hline
+\textbf{作者} & 许庆 &
+\textbf{日期} & 2026-06-26 \\
+\hline
+\textbf{联系方式} & \multicolumn{3}{l|}{18612426814~/~qingxu@tsinghua.edu.cn} \\
+\hline
+\textbf{密级} & 内部公开 &
+\textbf{AI辅助} & Cursor Agent (Claude Opus 4.6) \\
+\hline
+\end{tabular}
+\end{center}
+
+\vspace{12pt}
+
+\begin{center}
+\renewcommand{\arraystretch}{1.4}
+\begin{tabular}{|C{1.2cm}|C{2cm}|L{5cm}|C{2cm}|C{2cm}|}
+\hline
+\multicolumn{5}{|c|}{\textbf{更改记录}} \\
+\hline
+\textbf{版本} & \textbf{日期} & \textbf{更改说明} & \textbf{作者} & \textbf{辅助AI} \\
+\hline
+2.0 & 2026-06-26 & 初始版本 & 许庆 & Claude Opus 4.6 \\
+\hline
+\end{tabular}
+\end{center}
+
+\newpage
+
+% ==================== 目录 ====================
+\tableofcontents
+\newpage
+
+% ============================================================
+%  1. 函数需求
+% ============================================================
+\section{函数需求}
+
+\subsection{功能概述}
+
+\texttt{evaluatePolynomialSlope} 计算三次多项式在给定点 $x$ 处的一阶导数（斜率）：
+\[
+  \frac{dy}{dx} = c_1 + 2c_2 x + 3c_3 x^2
+\]
+采用 Horner 法优化计算效率。
+
+\subsection{输入/输出/返回值}
+
+\renewcommand{\arraystretch}{1.3}
+\begin{longtable}{|C{1.5cm}|L{3.5cm}|C{3cm}|L{7cm}|}
+\hline
+\textbf{类别} & \textbf{名称} & \textbf{类型} & \textbf{说明} \\
+\hline
+\endfirsthead
+\hline
+\textbf{类别} & \textbf{名称} & \textbf{类型} & \textbf{说明} \\
+\hline
+\endhead
+输入 & \texttt{coeffs} & const PolynomialCoeffs\& & 多项式系数 $c[0..3]$ \\
+\hline
+输入 & \texttt{x} & double & 自变量值 \\
+\hline
+返回值 & --- & double & 多项式在 $x$ 处的一阶导数值 \\
+\hline
+\end{longtable}
+
+% ============================================================
+%  1.2 算法设计
+% ============================================================
+\subsection{算法设计}
+
+对三次多项式 $y = c_0 + c_1 x + c_2 x^2 + c_3 x^3$ 求一阶导数：
+\begin{equation}
+  \frac{dy}{dx} = c_1 + 2c_2 x + 3c_3 x^2
+\end{equation}
+
+这是一个二次多项式。采用 Horner 法改写为嵌套形式：
+\begin{equation}
+  \frac{dy}{dx} = c_1 + x \cdot (2c_2 + 3c_3 \cdot x)
+\end{equation}
+
+\textbf{计算步骤}：
+\begin{enumerate}
+  \item $t_1 = 2 \cdot c_2 + 3 \cdot c_3 \cdot x$
+  \item $\text{slope} = c_1 + x \cdot t_1$
+\end{enumerate}
+
+Horner 形式仅需 3 次乘法和 2 次加法（直接展开需 4 次乘法和 2 次加法）。
+
+\textbf{注意}：$c_0$ 为常数项，求导后消失，不参与斜率计算。
+
+% ============================================================
+%  1.3 程序流程图
+% ============================================================
+\subsection{程序流程图}
+
+\begin{center}
+\begin{tikzpicture}[
+  node distance=1.0cm,
+  startstop/.style={rectangle, rounded corners, minimum width=3.5cm, minimum height=0.7cm,
+    text centered, draw=black, fill=blue!8, font=\small},
+  process/.style={rectangle, minimum width=5.5cm, minimum height=0.7cm,
+    text centered, draw=black, fill=orange!8, font=\small},
+  arrow/.style={-{Stealth[length=2.5mm]}, thick}
+]
+
+\node (start) [startstop] {开始};
+\node (input) [process, below=of start] {读入 coeffs, x};
+\node (calc) [process, below=of input] {slope = c[1] + x*(2*c[2] + 3*c[3]*x)};
+\node (output) [process, below=of calc] {返回 slope};
+\node (stop) [startstop, below=of output] {结束};
+
+\draw [arrow] (start) -- (input);
+\draw [arrow] (input) -- (calc);
+\draw [arrow] (calc) -- (output);
+\draw [arrow] (output) -- (stop);
+
+\end{tikzpicture}
+\end{center}
+
+% ============================================================
+%  1.4 函数接口
+% ============================================================
+\subsection{函数接口}
+
+\begin{verbatim}
+double evaluatePolynomialSlope(const PolynomialCoeffs& coeffs, const double x);
+\end{verbatim}
+
+% ============================================================
+%  1.5 输入输出模块图
+% ============================================================
+\subsection{输入输出模块图}
+
+\begin{center}
+\begin{tikzpicture}[
+  box/.style={rectangle, draw=black, thick, minimum width=3.5cm, minimum height=0.6cm,
+    text centered, fill=yellow!10, font=\small},
+  core/.style={rectangle, draw=black, very thick, minimum width=5.5cm, minimum height=1.5cm,
+    text centered, fill=orange!10, font=\normalsize\bfseries, rounded corners=3pt},
+  arrow/.style={-{Stealth[length=2.5mm]}, thick}
+]
+
+\node (core) [core] {evaluatePolynomialSlope};
+
+\node (in1) [box, left=3cm of core, yshift=0.4cm] {coeffs (PolynomialCoeffs)};
+\node (in2) [box, left=3cm of core, yshift=-0.4cm] {x (double)};
+
+\node (out1) [box, right=3cm of core] {slope (double)};
+
+\draw [arrow] (in1) -- (core);
+\draw [arrow] (in2) -- (core);
+\draw [arrow] (core) -- (out1);
+
+\node [above=0.1cm of in1, font=\small\bfseries] {输入 (Input)};
+\node [above=0.1cm of out1, font=\small\bfseries] {输出 (Output)};
+
+\end{tikzpicture}
+\end{center}
+
+% ============================================================
+%  1.6 函数诸元表
+% ============================================================
+\subsection{函数诸元表}
+
+\renewcommand{\arraystretch}{1.3}
+\begin{longtable}{|L{3.8cm}|L{11.5cm}|}
+\hline
+\textbf{属性} & \textbf{说明} \\
+\hline
+\endfirsthead
+\hline
+\textbf{属性} & \textbf{说明} \\
+\hline
+\endhead
+函数英文名 & \texttt{evaluatePolynomialSlope} \\
+\hline
+函数中文名 & 多项式斜率求值 \\
+\hline
+函数类型 & 元件 (Element) \\
+\hline
+版本 & 2.0 \\
+\hline
+源文件 & \texttt{src/cpp/evaluatePolynomialSlope/evaluatePolynomialSlope.cpp} \\
+\hline
+头文件 & \texttt{include/cpp/evaluatePolynomialSlope/evaluatePolynomialSlope.hpp} \\
+\hline
+命名空间 & \texttt{waypoint\_follow} \\
+\hline
+输入数量 & 2（coeffs, x） \\
+\hline
+输出数量 & 1（返回值 double） \\
+\hline
+参数数量 & 0 \\
+\hline
+状态数量 & 0（无状态，纯函数） \\
+\hline
+下级函数数量 & 0 \\
+\hline
+动态内存分配 & 无 \\
+\hline
+外部依赖 & 无（仅算术运算） \\
+\hline
+算法类别 & 多项式微分 / Horner 法 \\
+\hline
+\end{longtable}
+
+% ============================================================
+%  1.7 函数架构
+% ============================================================
+\subsection{函数架构}
+
+无下级函数调用。\texttt{evaluatePolynomialSlope} 为叶节点元件，仅包含算术运算。
+
+% ============================================================
+%  1.8 数据结构定义
+% ============================================================
+\subsection{数据结构定义}
+
+引用 \texttt{waypointFollowTypes.hpp} 中定义的结构体：
+
+\subsubsection{PolynomialCoeffs~---~三次多项式系数}
+\begin{longtable}{|L{3.5cm}|C{2cm}|L{9.5cm}|}
+\hline
+\textbf{成员} & \textbf{类型} & \textbf{说明} \\
+\hline
+\texttt{c[4]} & double[4] & $y = c[0] + c[1]\,x + c[2]\,x^2 + c[3]\,x^3$ \\
+\hline
+\end{longtable}
+
+% ============================================================
+%  1.9 测试用例
+% ============================================================
+\subsection{测试用例}
+
+\subsubsection{正常测试用例}
+
+{\small
+\begin{longtable}{|C{0.6cm}|L{2.2cm}|L{4.5cm}|L{3.5cm}|L{3.8cm}|}
+\hline
+\textbf{编号} & \textbf{场景} & \textbf{输入} & \textbf{预期输出} & \textbf{验证准则} \\
+\hline
+\endfirsthead
+\hline
+\textbf{编号} & \textbf{场景} & \textbf{输入} & \textbf{预期输出} & \textbf{验证准则} \\
+\hline
+\endhead
+N-1 &
+零点斜率 &
+$\mathbf{c}{=}[1,2,3,4]$, $x{=}0$ &
+$s = 2.0$ &
+$s = c_1$（高阶项消失） \\
+\hline
+N-2 &
+$x{=}1$ 全系数 &
+$\mathbf{c}{=}[1,2,3,4]$, $x{=}1$ &
+$s = 20.0$ &
+$2{+}6{+}12 = 20$ \\
+\hline
+N-3 &
+负 $x$ 值 &
+$\mathbf{c}{=}[1,2,3,4]$, $x{=}{-}1$ &
+$s = 8.0$ &
+$2{-}6{+}12 = 8$ \\
+\hline
+N-4 &
+线性多项式 &
+$\mathbf{c}{=}[5,3,0,0]$, $x{=}100$ &
+$s = 3.0$ &
+$c_2{=}c_3{=}0$ 时斜率为常数 $c_1$ \\
+\hline
+N-5 &
+小数值 $x$ &
+$\mathbf{c}{=}[0,0,1,0]$, $x{=}0.5$ &
+$s = 1.0$ &
+$2 \cdot 1 \cdot 0.5 = 1.0$ \\
+\hline
+\end{longtable}
+}
+
+\vspace{6pt}
+{\small
+\begin{longtable}{|L{2.5cm}|L{13cm}|}
+\hline
+\multicolumn{2}{|c|}{\textbf{正常测试用例符号说明}} \\
+\hline
+\textbf{符号} & \textbf{含义} \\
+\hline
+$\mathbf{c}$ & 多项式系数数组 coeffs.c[0..3] \\
+\hline
+$x$ & 自变量值 \\
+\hline
+$s$ & 返回值（多项式一阶导数/斜率） \\
+\hline
+$c_i$ & 第 $i$ 阶系数，即 coeffs.c[$i$] \\
+\hline
+\end{longtable}
+}
+
+\subsubsection{异常测试用例}
+
+{\small
+\begin{longtable}{|C{0.6cm}|L{2.0cm}|L{4.2cm}|L{4.0cm}|L{3.8cm}|}
+\hline
+\textbf{编号} & \textbf{场景} & \textbf{输入} & \textbf{预期输出/行为} & \textbf{验证准则} \\
+\hline
+\endfirsthead
+\hline
+\textbf{编号} & \textbf{场景} & \textbf{输入} & \textbf{预期输出/行为} & \textbf{验证准则} \\
+\hline
+\endhead
+A-1 &
+$x$ 为 NaN &
+$\mathbf{c}{=}[1,2,3,4]$, $x{=}\text{NaN}$ &
+$s = \text{NaN}$ &
+NaN 参与运算传播 \\
+\hline
+A-2 &
+$x$ 为 $+\infty$ &
+$\mathbf{c}{=}[1,2,3,4]$, $x{=}+\infty$ &
+$s = +\infty$ &
+$3c_3 x^2 \to +\infty$ 主导 \\
+\hline
+A-3 &
+$x$ 为 $-\infty$ &
+$\mathbf{c}{=}[1,2,3,4]$, $x{=}-\infty$ &
+$s = +\infty$ &
+$3c_3 x^2$（偶次幂为正）主导 \\
+\hline
+A-4 &
+$c_1$ 为 NaN &
+$\mathbf{c}{=}[0,\text{NaN},3,4]$, $x{=}2$ &
+$s = \text{NaN}$ &
+NaN 系数传播 \\
+\hline
+A-5 &
+$c_2$ 为 $\infty$ &
+$\mathbf{c}{=}[0,0,+\infty,0]$, $x{=}1$ &
+$s = +\infty$ &
+$2 \cdot \infty \cdot 1 = +\infty$ \\
+\hline
+A-6 &
+$\infty - \infty$ 抵消 &
+$\mathbf{c}{=}[0,+\infty,0,-\infty]$, $x{=}1$ &
+$s = \text{NaN}$ &
+$+\infty + (-\infty) = $ NaN \\
+\hline
+A-7 &
+极大 $x$ 值 &
+$\mathbf{c}{=}[0,0,0,1]$, $x{=}10^{100}$ &
+$s = 3\!\times\!10^{200}$ &
+未溢出（$< $ DBL\_MAX） \\
+\hline
+A-8 &
+溢出场景 &
+$\mathbf{c}{=}[0,0,0,1]$, $x{=}10^{154}$ &
+$s = +\infty$（溢出） &
+$3 \cdot 10^{308} > $ DBL\_MAX \\
+\hline
+A-9 &
+全零系数 &
+$\mathbf{c}{=}[0,0,0,0]$, $x{=}10^{308}$ &
+$s = 0.0$ &
+精确零结果 \\
+\hline
+A-10 &
+subnormal $x$ &
+$\mathbf{c}{=}[0,1,0,0]$, $x{=}5\!\times\!10^{-324}$ &
+$s = 1.0$ &
+$c_1$ 为常数项，不受 $x$ 影响 \\
+\hline
+\end{longtable}
+}
+
+\vspace{6pt}
+{\small
+\begin{longtable}{|L{2.5cm}|L{13cm}|}
+\hline
+\multicolumn{2}{|c|}{\textbf{异常测试用例符号说明}} \\
+\hline
+\textbf{符号} & \textbf{含义} \\
+\hline
+$\mathbf{c}$ & 多项式系数数组 coeffs.c[0..3] \\
+\hline
+$x$ & 自变量值 \\
+\hline
+$s$ & 返回值（多项式一阶导数/斜率） \\
+\hline
+NaN & IEEE 754 非数值，任何含 NaN 的算术运算结果为 NaN \\
+\hline
+$+\infty$/$-\infty$ & IEEE 754 正/负无穷大 \\
+\hline
+DBL\_MAX & double 最大有限值 $\approx 1.7\!\times\!10^{308}$ \\
+\hline
+subnormal & 非规格化浮点数（极接近零） \\
+\hline
+\end{longtable}
+}
+
+\end{document}

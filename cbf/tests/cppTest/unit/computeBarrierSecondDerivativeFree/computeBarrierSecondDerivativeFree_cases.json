@@ -1,0 +1,39 @@
+{
+  "function_name": "computeBarrierSecondDerivativeFree",
+  "description": "Barrier 二阶导自由项单元测试用例",
+  "test_cases": [
+    {
+      "id": "TC001_pure_velocity",
+      "dxEgo": 0.0,
+      "dyEgo": 0.0,
+      "vRxEgo": 3.0,
+      "vRyEgo": 4.0,
+      "axObEgo": 0.0,
+      "ayObEgo": 0.0,
+      "expected": 50.0,
+      "tolerance": 1e-09
+    },
+    {
+      "id": "TC002_position_accel",
+      "dxEgo": 2.0,
+      "dyEgo": 3.0,
+      "vRxEgo": 0.0,
+      "vRyEgo": 0.0,
+      "axObEgo": 1.0,
+      "ayObEgo": 1.0,
+      "expected": 10.0,
+      "tolerance": 1e-09
+    },
+    {
+      "id": "TC003_combined",
+      "dxEgo": 1.0,
+      "dyEgo": 1.0,
+      "vRxEgo": 1.0,
+      "vRyEgo": 1.0,
+      "axObEgo": 0.5,
+      "ayObEgo": 0.5,
+      "expected": 6.0,
+      "tolerance": 1e-09
+    }
+  ]
+}

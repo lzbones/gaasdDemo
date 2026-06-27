@@ -1,0 +1,42 @@
+{
+  "function_name": "computeObstacleAffineConstraint",
+  "description": "HOCBF 仿射约束生成测试，对照解析公式手算结果",
+  "test_cases": [
+    {
+      "id": "TC001_static_far",
+      "egoVelocity": 10.0,
+      "wheelBase": 2.7,
+      "alpha1": 1.0,
+      "alpha2": 1.0,
+      "dxEgo": 20.0,
+      "dyEgo": 0.0,
+      "vRxEgo": -10.0,
+      "vRyEgo": 0.0,
+      "axObEgo": 0.0,
+      "ayObEgo": 0.0,
+      "safetyRadius": 4.0,
+      "betaAExp": -40.0,
+      "betaTExp": 0.0,
+      "boundExp": 216.0,
+      "tolerance": 1e-06
+    },
+    {
+      "id": "TC002_zero_velocity",
+      "egoVelocity": 0.0,
+      "wheelBase": 2.7,
+      "alpha1": 1.0,
+      "alpha2": 1.0,
+      "dxEgo": 5.0,
+      "dyEgo": 3.0,
+      "vRxEgo": -1.0,
+      "vRyEgo": 0.0,
+      "axObEgo": 0.0,
+      "ayObEgo": 0.0,
+      "safetyRadius": 4.0,
+      "betaAExp": -10.0,
+      "betaTExp": 0.0,
+      "boundExp": -0.0,
+      "tolerance": 1e-06
+    }
+  ]
+}

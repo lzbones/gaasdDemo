@@ -1,0 +1,12 @@
+{
+  "module_name": "MpcComputeCost",
+  "traits_type": "MpcComputeCostTraits",
+  "description": "MpcComputeCost component integration tests",
+  "test_cases": [
+    {
+      "id": "MCC_TC001",
+      "description": "Zero control on straight trajectory should yield low cost",
+      "note": "Tested programmatically in WaypointFollow_test.cpp"
+    }
+  ]
+}

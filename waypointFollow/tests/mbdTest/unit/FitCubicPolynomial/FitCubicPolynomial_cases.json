@@ -1,0 +1,35 @@
+{
+  "module_name": "FitCubicPolynomial",
+  "traits_type": "FitCubicPolynomialTraits",
+  "description": "FitCubicPolynomial element unit tests",
+  "test_cases": [
+    {
+      "id": "FP_TC001",
+      "description": "Known cubic y=1+2x+3x^2+4x^3",
+      "input": {
+        "xData": [0.0, 0.2, 0.4, 0.6, 0.8, 1.0],
+        "yData": [1.0, 1.552, 2.536, 4.144, 6.568, 10.0],
+        "numPoints": 6
+      },
+      "expected_output": {
+        "coeffs": [1.0, 2.0, 3.0, 4.0],
+        "success": true
+      },
+      "tolerance": 0.5
+    },
+    {
+      "id": "FP_TC002",
+      "description": "Linear y=3x",
+      "input": {
+        "xData": [0.0, 0.5, 1.0, 1.5, 2.0],
+        "yData": [0.0, 1.5, 3.0, 4.5, 6.0],
+        "numPoints": 5
+      },
+      "expected_output": {
+        "coeffs": [0.0, 3.0, 0.0, 0.0],
+        "success": true
+      },
+      "tolerance": 0.1
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+═══════════════════════════════════════
+  ComputeObstacleAffineConstraint FuncModule 架构验证报告
+═══════════════════════════════════════
+验证依据：MbdRefactor/04_mbd_refactor.md - MBD FuncModule 架构重构规范
+
+【Traits 五元结构验证】
+[x] Input:定义了外部输入信息
+[x] Output:定义了计算结果输出
+[x] Param:定义了配置参数约束
+[x] State:定义了内部时序状态（无状态时为空 struct State {}）
+[x] Sub:定义了子模块实体 (值语义)
+
+【基类与继承验证】
+[x] 继承 FuncModule<ComputeObstacleAffineConstraintTraits>
+[x] using FuncModule::FuncModule 引入构造函数
+[x] run(const Input&, Output&) 方法签名正确
+
+【值语义与依赖注入验证】
+[x] 无指针设计（无 raw 指针 / 智能指针 / 引用成员）
+[x] 先配置后移动 (CRITICAL): setParam/setState 在 std::move 之前
+[x] std::move 正确使用（参数构造时通过基类模板转发）
+
+【MBD 注解规范验证】(复合模块适用)
+[x] MBD_AUTO_GEN_BEGIN/END 魔术注释存在
+[x] models/ComputeObstacleAffineConstraint.json 蓝图文件存在
+[x] 执行序列与 JSON 拓扑一致
+
+【命名与文件结构验证】
+[x] Traits 命名：ComputeObstacleAffineConstraintTraits（大驼峰 + Traits 后缀）
+[x] 头文件格式：include/mbd/ComputeObstacleAffineConstraint.hpp + #pragma once
+[x] 源文件位置：src/mbd/ComputeObstacleAffineConstraint.cpp
+[x] 物理目录结构：include/、src/、models/ 正确分离
+
+验证结论：[x] 通过  [ ] 需修改
+═══════════════════════════════════════

@@ -1,0 +1,46 @@
+{
+  "module_name": "ComputeBarrierSquared",
+  "traits_type": "ComputeBarrierSquaredTraits",
+  "description": "ComputeBarrierSquared Traits 级单元测试用例",
+  "test_cases": [
+    {
+      "id": "TC1_front_10m",
+      "param": {
+        "safetyRadius": 4
+      },
+      "input": {
+        "dxEgo": 10,
+        "dyEgo": 0
+      },
+      "expected_output": {
+        "barrier": 84
+      }
+    },
+    {
+      "id": "TC2_diag_5m",
+      "param": {
+        "safetyRadius": 4
+      },
+      "input": {
+        "dxEgo": 3,
+        "dyEgo": 4
+      },
+      "expected_output": {
+        "barrier": 9
+      }
+    },
+    {
+      "id": "TC3_collision",
+      "param": {
+        "safetyRadius": 4
+      },
+      "input": {
+        "dxEgo": 0,
+        "dyEgo": 0
+      },
+      "expected_output": {
+        "barrier": -16
+      }
+    }
+  ]
+}

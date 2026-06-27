@@ -1,0 +1,161 @@
+\documentclass[a4paper,10pt]{article}
+\usepackage[UTF8]{ctex}
+\usepackage{geometry}
+\usepackage{tikz}
+\usetikzlibrary{shapes.geometric, arrows.meta, positioning, calc, trees}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{fancyhdr}
+\usepackage{xcolor}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{hyperref}
+\geometry{left=2.5cm, right=2.5cm, top=3cm, bottom=2.5cm}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[C]{\small rotateVectorByMinusYaw 函数设计文档}
+\fancyfoot[C]{\thepage}
+\setcounter{secnumdepth}{3}
+\setcounter{tocdepth}{3}
+\tikzset{
+    startstop/.style={ellipse, draw, fill=red!10, text width=8em, minimum height=0.9cm, align=center},
+    process/.style={rectangle, draw, fill=blue!5, text width=11em, minimum height=1.1cm, align=center},
+    decision/.style={diamond, draw, fill=green!10, text width=7em, minimum height=1cm, align=center},
+    arrow/.style={thick,->,>=Stealth}
+}
+\begin{document}
+\begin{titlepage}
+    \centering
+    {\Huge\textbf{rotateVectorByMinusYaw（全局向量绕 -yaw 旋转到自车系）函数设计}\par}
+    \vspace{1.5cm}
+    \renewcommand{\arraystretch}{1.5}
+    \begin{tabular}{|l|l|l|l|}
+        \hline
+        文件密级 & 内部公开 & 编号 & CBF-DOC-ROTATEVECTORBYMINUSYAW \\ \hline
+        版本 & V1.0 & 内容 & rotateVectorByMinusYaw（全局向量绕 -yaw 旋转到自车系）函数设计 \\ \hline
+        设计 & 许庆 & 联系方式 & 18612426814 / qingxu@tsinghua.edu.cn \\ \hline
+        审核 & - & 审批 & - \\ \hline
+        发布日期 & 2026 年 6 月 26 日 & & \\ \hline
+    \end{tabular}
+    \vspace{1.5cm}
+    \section*{文件更改记录}
+    \begin{longtable}{|c|c|p{4cm}|c|c|c|c|}
+        \hline
+        日期 & 版本号 & 修订说明 & 辅助AI & 修订 & 审核 & 审批 \\ \hline
+        2026-6-26 & V1.0 & 初次设计 & Claude-Opus-4.7 & 许庆 & - & - \\ \hline
+    \end{longtable}
+\end{titlepage}
+\tableofcontents
+\newpage
+\section{公有函数设计}
+\subsection{rotateVectorByMinusYaw（全局向量绕 -yaw 旋转到自车系）函数设计}
+\subsubsection{函数需求}
+\par 本函数实现 \textbf{全局向量绕 -yaw 旋转到自车系}。其在 CBF 自动驾驶安全控制流水线中承担如下职责：将全局坐标系下的二维向量左乘旋转矩阵 R(-yaw)，输出 ego frame 下分量。
+\par 头文件路径：\texttt{include/cpp/rotateVectorByMinusYaw/rotateVectorByMinusYaw.hpp}；源文件路径：\texttt{src/cpp/rotateVectorByMinusYaw/rotateVectorByMinusYaw.cpp}。
+\subsubsection{算法设计}
+\par 本函数核心数学表达式如下：
+\begin{equation}
+\begin{bmatrix} v_x^{ego} \\ v_y^{ego} \end{bmatrix} = \begin{bmatrix} \cos\varphi & \sin\varphi \\ -\sin\varphi & \cos\varphi \end{bmatrix}\begin{bmatrix} v_x^{global} \\ v_y^{global} \end{bmatrix}
+\end{equation}
+\par 实现步骤：
+\begin{enumerate}
+  \item \textbf{calc\_cos\_sin}: 计算 cos(yaw)、sin(yaw)
+  \item \textbf{apply\_rotation}: 应用 R(-yaw) 得到 ego frame 分量
+  \item \textbf{write\_back}: 通过指针写回输出
+\end{enumerate}
+\subsubsection{程序流程图}
+\begin{figure}[h]
+    \centering
+    \begin{tikzpicture}[node distance=1.6cm]
+    \node (start) [startstop] {开始};
+    \node (p0) [process, below of=start, yshift=-0.3cm] {计算 cos(yaw)、sin(yaw)};
+    \node (p1) [process, below of=p0, yshift=-0.3cm] {应用 R(-yaw) 得到 ego frame 分量};
+    \node (p2) [process, below of=p1, yshift=-0.3cm] {通过指针写回输出};
+    \node (end) [startstop, below of=p2, yshift=-0.3cm] {返回 / 写回输出};
+    \draw [arrow] (start) -- (p0);
+    \draw [arrow] (p0) -- (p1);
+    \draw [arrow] (p1) -- (p2);
+    \draw [arrow] (p2) -- (end);
+
+    \end{tikzpicture}
+    \caption{rotateVectorByMinusYaw 函数程序流程图}
+    \label{fig:flow_rotateVectorByMinusYaw}
+\end{figure}
+\subsubsection{函数接口}
+\par 输入参数列表：
+\begin{itemize}
+  \item \texttt{vxGlobal} (double) -- 全局 x 分量 (m/s 或 m/s\textasciicircum{}2)
+  \item \texttt{vyGlobal} (double) -- 全局 y 分量
+  \item \texttt{yaw} (double) -- 自车朝向角 (rad)
+\end{itemize}
+\par 输出参数列表：
+\begin{itemize}
+  \item \texttt{vxEgo} (double*) -- ego frame 纵向分量
+  \item \texttt{vyEgo} (double*) -- ego frame 横向分量
+\end{itemize}
+\subsubsection{输入输出模块图}
+\begin{figure}[h]
+    \centering
+    \begin{tikzpicture}[>=Stealth]
+        \node[draw, rectangle, minimum width=4.5cm, minimum height=2cm, fill=blue!5] (func) at (0,0) {\large{\textbf{rotateVectorByMinusYaw}}};
+        \draw[->, thick] (-3.5,0.4) -- node[above]{I (输入)} (-2.3,0.4);
+        \draw[->, thick] (2.3,0.4) -- node[above]{O (输出)} (3.5,0.4);
+        \draw[->, thick] (0,-1.0) -- node[right]{f (返回)} (0,-2.0);
+    \end{tikzpicture}
+    \caption{rotateVectorByMinusYaw 函数输入输出模块图}
+    \label{fig:io_rotateVectorByMinusYaw}
+\end{figure}
+\subsubsection{函数诸元表}
+\begin{table}[h]
+    \centering
+    \caption{rotateVectorByMinusYaw 函数诸元表}
+    \label{tab:meta_rotateVectorByMinusYaw}
+    \begin{tabular}{|c|c|c|c|c|}
+        \hline
+        中文名 & 英文名 & 性质 & 级别 & 入库 \\ \hline
+        全局向量绕 -yaw 旋转到自车系 & rotateVectorByMinusYaw & 元件 & 应用层 & 是 \\ \hline
+    \end{tabular}
+\end{table}
+\subsubsection{函数架构}
+\par 本函数为\textbf{元件}（叶子节点），无下级函数依赖。
+
+\subsubsection{测试用例表}
+\noindent\textbf{正常场景测试用例如表~\ref{tab:normal_rotateVectorByMinusYaw} 所示：}
+\begin{table}[h]
+\centering
+\caption{rotateVectorByMinusYaw 正常场景测试用例}
+\label{tab:normal_rotateVectorByMinusYaw}
+\begin{tabular}{|c|p{3.5cm}|p{3.5cm}|p{3.5cm}|}
+\hline
+ID & 描述 & 输入 & 期望输出 \\ \hline
+  TC1 & 正常用例 1 & 见 cases.json & 见 cases.json \\ \hline
+  TC2 & 正常用例 2 & 见 cases.json & 见 cases.json \\ \hline
+  TC3 & 正常用例 3 & 见 cases.json & 见 cases.json \\ \hline
+  TC4 & 正常用例 4 & 见 cases.json & 见 cases.json \\ \hline
+  TC5 & 正常用例 5 & 见 cases.json & 见 cases.json \\ \hline
+\end{tabular}
+\end{table}
+
+\noindent\textbf{异常场景测试用例如表~\ref{tab:abnormal_rotateVectorByMinusYaw} 所示：}
+\begin{table}[h]
+\centering
+\caption{rotateVectorByMinusYaw 异常场景测试用例}
+\label{tab:abnormal_rotateVectorByMinusYaw}
+\begin{tabular}{|c|p{3.5cm}|p{3.5cm}|p{3.5cm}|}
+\hline
+ID & 描述 & 输入 & 期望输出 \\ \hline
+  EC1 & NaN 输入 & 任一标量=NaN & 输出含 NaN \\ \hline
+  EC2 & Inf 输入 & 任一标量=Inf & 输出含 Inf \\ \hline
+  EC3 & 数学边界 & 极限值 & 结果有界或返回 false \\ \hline
+  EC4 & QP 不可行 & 约束相互冲突 & 返回 feasible=false \\ \hline
+\end{tabular}
+\end{table}
+
+\noindent\textbf{符号说明：}
+\begin{itemize}
+  \item dx, dy: ego-frame 相对位置 (m)
+  \item v\_rx, v\_ry: ego-frame 相对速度 (m/s)
+  \item r: 安全圆半径 (m)
+  \item B: Barrier 函数值
+\end{itemize}
+\end{document}
