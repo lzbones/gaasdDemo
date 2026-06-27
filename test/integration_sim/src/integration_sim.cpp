@@ -57,13 +57,13 @@ struct GlobalObstacle {
 // ---------------------------------------------------------------------------
 
 /// 将障碍物全局状态转换为 cbf 要求的 ego frame 状态
-cbf::ObstacleState toEgoFrame(const GlobalEgo& ego, const GlobalObstacle& ob) {
+cbf_arbitration::ObstacleState toEgoFrame(const GlobalEgo& ego, const GlobalObstacle& ob) {
   const double dxGlobal = ob.x - ego.x;
   const double dyGlobal = ob.y - ego.y;
   const double cosPhi = std::cos(ego.phi);
   const double sinPhi = std::sin(ego.phi);
 
-  cbf::ObstacleState s;
+  cbf_arbitration::ObstacleState s;
   s.dxEgo = cosPhi * dxGlobal + sinPhi * dyGlobal;
   s.dyEgo = -sinPhi * dxGlobal + cosPhi * dyGlobal;
 
@@ -128,8 +128,8 @@ void generateOffsetWaypoints(waypoint_follow::WaypointFollowInput& input,
 /// @param wheelbase 车辆轴距
 /// @param qDiagSteer 转向权重，较小的值鼓励 CBF 使用转向规避
 /// @note 默认使用较大转向权重使 CBF 优先通过纵向减速保持安全
-cbf::CbfParam makeCbfParam(double wheelbase, double qDiagSteer = 200.0) {
-  cbf::CbfParam p;
+cbf_arbitration::CbfParam makeCbfParam(double wheelbase, double qDiagSteer = 200.0) {
+  cbf_arbitration::CbfParam p;
   p.safetyRadius = 5.0;
   p.alpha1 = 1.2;
   p.alpha2 = 1.2;
@@ -274,7 +274,7 @@ void runScenario(const ScenarioConfig& cfg) {
   }
 
   csv << "t,ego_x,ego_y,ego_v,ego_phi,"
-      << "sw_original,accel_original,"
+      << "sw_original,delta_f_original,accel_original,"
       << "a_safe,delta_f_safe,feasible,"
       << "min_dist";
   for (std::size_t i = 0; i < cfg.obstacles.size(); ++i) {
@@ -289,7 +289,7 @@ void runScenario(const ScenarioConfig& cfg) {
   const double steeringRatio = wfParam.steeringRatio;
 
   // CBF 参数（每个场景可独立配置转向权重）
-  const cbf::CbfParam cbfParam = makeCbfParam(wheelbase, cfg.qDiagSteer);
+  const cbf_arbitration::CbfParam cbfParam = makeCbfParam(wheelbase, cfg.qDiagSteer);
 
   GlobalEgo ego = cfg.ego;
   std::vector<GlobalObstacle> obs = cfg.obstacles;
@@ -322,7 +322,7 @@ void runScenario(const ScenarioConfig& cfg) {
     const double deltaFOriginal = wfOutput.frontWheelAngle;
 
     // 5) 构造 cbf 自车状态
-    cbf::EgoState egoState;
+    cbf_arbitration::EgoState egoState;
     egoState.xg = ego.x;
     egoState.yg = ego.y;
     egoState.velocity = ego.v;
@@ -331,14 +331,14 @@ void runScenario(const ScenarioConfig& cfg) {
     egoState.deltaFOriginal = deltaFOriginal;
 
     // 6) 障碍物状态转换到 ego frame
-    std::vector<cbf::ObstacleState> obstacleStates;
+    std::vector<cbf_arbitration::ObstacleState> obstacleStates;
     obstacleStates.reserve(obs.size());
     for (const auto& ob : obs) {
       obstacleStates.push_back(toEgoFrame(ego, ob));
     }
 
     // 7) cbf 安全仲裁
-    const cbf::CbfOutput cbfOutput = cbf::cbfControlRevision(
+    const cbf_arbitration::CbfOutput cbfOutput = cbf_arbitration::cbfControlRevision(
         egoState, obstacleStates.data(), obstacleStates.size(), cbfParam);
 
     // 8) 计算最小障碍物距离
@@ -353,6 +353,7 @@ void runScenario(const ScenarioConfig& cfg) {
     // 9) 记录 CSV
     csv << t << "," << ego.x << "," << ego.y << "," << ego.v << ","
         << ego.phi << "," << wfOutput.steeringWheelAngle << ","
+        << deltaFOriginal << ","
         << wfOutput.acceleration << "," << cbfOutput.aSafe << ","
         << cbfOutput.deltaFSafe << "," << (cbfOutput.feasible ? 1 : 0)
         << "," << minDist;

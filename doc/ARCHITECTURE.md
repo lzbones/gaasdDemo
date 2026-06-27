@@ -370,6 +370,6 @@ python3 scripts/draw_architecture.py
 ## 11. 参考
 
 - 根目录说明：`../README.md`
-- CBF 模块详细文档：`../cbf/Readme.md`
+- CBF 模块详细文档：`../cbfArbitration/Readme.md`
 - waypointFollow 模块详细文档：`../waypointFollow/Readme.md`
 - 集成仿真说明：`../test/integration_sim/README.md`

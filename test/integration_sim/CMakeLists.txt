@@ -10,7 +10,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 # 路径约定：本 CMake 位于 <repo-root>/test/integration_sim
 # ---------------------------------------------------------------------------
 set(REPO_ROOT ${CMAKE_CURRENT_SOURCE_DIR}/../..)
-set(CBF_ROOT ${REPO_ROOT}/cbf)
+set(CBF_ROOT ${REPO_ROOT}/cbfArbitration)
 set(WF_ROOT ${REPO_ROOT}/waypointFollow)
 
 # ---------------------------------------------------------------------------
@@ -27,9 +27,9 @@ set(CBF_SOURCES
   ${CBF_ROOT}/src/cpp/cbfControlRevision.cpp
 )
 
-add_library(cbf_core STATIC ${CBF_SOURCES})
-target_include_directories(cbf_core PUBLIC ${CBF_ROOT}/include/cpp)
-target_compile_options(cbf_core PRIVATE -Wall -Wextra -Wno-unused-parameter)
+add_library(cbf_arbitration_core STATIC ${CBF_SOURCES})
+target_include_directories(cbf_arbitration_core PUBLIC ${CBF_ROOT}/include/cpp)
+target_compile_options(cbf_arbitration_core PRIVATE -Wall -Wextra -Wno-unused-parameter)
 
 # ---------------------------------------------------------------------------
 # WaypointFollow 静态库
@@ -56,7 +56,7 @@ target_compile_options(waypointfollow_lib PRIVATE -Wall -Wextra)
 # 集成仿真可执行文件
 # ---------------------------------------------------------------------------
 add_executable(integration_sim src/integration_sim.cpp)
-target_link_libraries(integration_sim PRIVATE waypointfollow_lib cbf_core)
+target_link_libraries(integration_sim PRIVATE waypointfollow_lib cbf_arbitration_core)
 
 # ---------------------------------------------------------------------------
 # 自定义运行目标

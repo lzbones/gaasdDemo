@@ -35,6 +35,7 @@ def plot_scenario(name: str, data: list, out_dir: Path):
     ego_v = [r["ego_v"] for r in data]
     accel_orig = [r["accel_original"] for r in data]
     a_safe = [r["a_safe"] for r in data]
+    delta_f_orig = [r["delta_f_original"] for r in data]
     delta_f_safe = [r["delta_f_safe"] for r in data]
     min_dist = [r["min_dist"] for r in data]
 
@@ -54,8 +55,9 @@ def plot_scenario(name: str, data: list, out_dir: Path):
     axes[1].legend()
     axes[1].grid(True)
 
-    # 安全前轮转角
-    axes[2].plot(t, [x * 180.0 / 3.141592653589793 for x in delta_f_safe], "m-", label="delta_f_safe")
+    # 前轮转角：原始 vs 安全
+    axes[2].plot(t, [x * 180.0 / 3.141592653589793 for x in delta_f_orig], "g--", label="delta_f_original (waypointFollow)")
+    axes[2].plot(t, [x * 180.0 / 3.141592653589793 for x in delta_f_safe], "m-", label="delta_f_safe (cbf)")
     axes[2].set_ylabel("Steering (deg)")
     axes[2].legend()
     axes[2].grid(True)

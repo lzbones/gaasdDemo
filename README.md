@@ -45,7 +45,7 @@ graph LR
 
 ```
 gaasdDemo/
-├── cbf/                          # CBF 安全控制修正模块
+├── cbfArbitration/               # cbfArbitration 安全控制修正模块
 │   ├── include/cpp/              # C++ 头文件
 │   ├── src/cpp/                  # C++ 实现
 │   ├── include/mbd/              # MBD FuncModule 头文件
@@ -55,7 +55,7 @@ gaasdDemo/
 │   ├── scripts/                  # 辅助脚本
 │   ├── doc/                      # LaTeX 设计文档
 │   ├── CMakeLists.txt
-│   └── Readme.md                 # CBF 模块详细文档
+│   └── Readme.md                 # cbfArbitration 模块详细文档
 │
 ├── waypointFollow/               # 端到端路点跟踪 MPC 控制器
 │   ├── include/cpp/              # C++ 头文件
@@ -267,10 +267,10 @@ cmake --build build
 ctest --test-dir build --output-on-failure
 ```
 
-### 5.2 cbf
+### 5.2 cbfArbitration
 
 ```bash
-cd cbf
+cd cbfArbitration
 cmake -B build
 cmake --build build
 ctest --test-dir build --output-on-failure
@@ -290,6 +290,6 @@ ctest --test-dir build --output-on-failure
 
 ## 七、参考
 
-- CBF 模块：`cbf/Readme.md`
+- cbfArbitration 模块：`cbfArbitration/Readme.md`
 - waypointFollow 模块：`waypointFollow/Readme.md`
 - 集成仿真：`test/integration_sim/README.md`
