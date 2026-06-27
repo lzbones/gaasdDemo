@@ -27,11 +27,11 @@ graph LR
         ACT[执行器/仿真模型<br/>a_safe, delta_f_safe]
     end
 
-    E2E -->|waypoints[6]| WF
-    EGO -->|egoSpeed, currentSteeringWheelAngle| WF
-    EGO -->|EgoState| CBF
-    PER -->|ObstacleState[]| CBF
-    WF -->|frontWheelAngle, acceleration| CBF
+    E2E -->|"waypoints[6]"| WF
+    EGO -->|"egoSpeed, currentSteeringWheelAngle"| WF
+    EGO -->|"EgoState"| CBF
+    PER -->|"ObstacleState[]"| CBF
+    WF -->|"frontWheelAngle, acceleration"| CBF
     CBF --> ACT
 ```
 
@@ -195,8 +195,8 @@ graph LR
     WP --> WF
     EGO --> WF
     EGO --> CBF
-    OBS -->|toEgoFrame| CBF
-    WF -->|frontWheelAngle, acceleration| CBF
+    OBS -->|"toEgoFrame"| CBF
+    WF -->|"frontWheelAngle, acceleration"| CBF
     CBF --> BM
     BM -->|下一时刻状态| EGO
 ```
