@@ -1,10 +1,10 @@
 /**
  * @file integration_sim.cpp
- * @brief waypointFollow + cbf 联合集成仿真
+ * @brief waypointFollow + cbfArbitration 联合集成仿真
  *
  * 在四个典型交通场景下，将端到端输出的 6 个未来路点喂给 waypointFollow，
  * 得到原始控制 (steeringWheelAngle, acceleration) 后，换算为前轮转角作为
- * cbf 的原始输入；cbf 结合感知障碍物信息输出安全控制 (aSafe, deltaFSafe)。
+ * cbfArbitration 的原始输入；cbfArbitration 结合感知障碍物信息输出安全控制 (aSafe, deltaFSafe)。
  * 最终使用单车自行车模型推进自车与障碍物状态，逐周期记录 CSV。
  */
 
@@ -56,7 +56,7 @@ struct GlobalObstacle {
 // 工具函数
 // ---------------------------------------------------------------------------
 
-/// 将障碍物全局状态转换为 cbf 要求的 ego frame 状态
+/// 将障碍物全局状态转换为 cbfArbitration 要求的 ego frame 状态
 cbf_arbitration::ObstacleState toEgoFrame(const GlobalEgo& ego, const GlobalObstacle& ob) {
   const double dxGlobal = ob.x - ego.x;
   const double dyGlobal = ob.y - ego.y;
@@ -318,10 +318,10 @@ void runScenario(const ScenarioConfig& cfg) {
     const WaypointFollowOutput wfOutput =
         waypointFollow(wfInput, wfParam, wfState);
 
-    // 4) waypointFollow 已直接输出前轮转角，作为 cbf 原始输入
+    // 4) waypointFollow 已直接输出前轮转角，作为 cbfArbitration 原始输入
     const double deltaFOriginal = wfOutput.frontWheelAngle;
 
-    // 5) 构造 cbf 自车状态
+    // 5) 构造 cbfArbitration 自车状态
     cbf_arbitration::EgoState egoState;
     egoState.xg = ego.x;
     egoState.yg = ego.y;
@@ -337,7 +337,7 @@ void runScenario(const ScenarioConfig& cfg) {
       obstacleStates.push_back(toEgoFrame(ego, ob));
     }
 
-    // 7) cbf 安全仲裁
+    // 7) cbfArbitration 安全仲裁
     const cbf_arbitration::CbfOutput cbfOutput = cbf_arbitration::cbfControlRevision(
         egoState, obstacleStates.data(), obstacleStates.size(), cbfParam);
 
@@ -381,7 +381,7 @@ void runScenario(const ScenarioConfig& cfg) {
 }  // namespace
 
 int main() {
-  std::cout << "=== waypointFollow + cbf Integration Simulation ===" << std::endl;
+  std::cout << "=== waypointFollow + cbfArbitration Integration Simulation ===" << std::endl;
 
   runScenario(makeLeadBrakeScenario());
   runScenario(makeCutInScenario());

@@ -1,6 +1,6 @@
 # GAASD 自动驾驶安全控制架构设计
 
-本文档从工程架构视角说明 `waypointFollow` 与 `cbf` 两个模块的职责边界、数据流、接口契约以及集成仿真框架的设计 rationale。
+本文档从工程架构视角说明 `waypointFollow` 与 `cbfArbitration` 两个模块的职责边界、数据流、接口契约以及集成仿真框架的设计 rationale。
 
 ---
 
@@ -9,8 +9,8 @@
 本工程演示一条“端到端路点跟踪 + 安全控制修正”的自动驾驶纵向/横向控制链路：
 
 - **waypointFollow**：将上游端到端模型给出的未来路点转化为可直接执行的目标方向盘转角、目标前轮转角与纵向加速度。
-- **cbf**：在原始控制量基础上，根据 ego frame 下的障碍物状态求解 HOCBF-QP，输出满足安全约束的加速度与前轮转角修正量。
-- **integration_sim**：搭建 `waypointFollow → cbf → 自行车模型` 的闭环仿真，验证多场景下的安全距离与舒适性。
+- **cbfArbitration**：在原始控制量基础上，根据 ego frame 下的障碍物状态求解 HOCBF-QP，输出满足安全约束的加速度与前轮转角修正量。
+- **integration_sim**：搭建 `waypointFollow → cbfArbitration → 自行车模型` 的闭环仿真，验证多场景下的安全距离与舒适性。
 
 核心设计原则：
 
@@ -35,7 +35,7 @@ graph LR
 
     subgraph 控制层
         WF[waypointFollow<br/>路点跟踪 MPC]
-        CBF[cbf<br/>安全控制修正]
+        CBF[cbfArbitration<br/>安全控制修正]
     end
 
     subgraph 下游输出
@@ -55,7 +55,7 @@ graph LR
 | 模块 | 职责 | 输入 | 输出 |
 |---|---|---|---|
 | `waypointFollow` | 路点拟合 + MPC 优化 | 自车速度、当前方向盘转角、6 个未来路点 | `steeringWheelAngle`, `frontWheelAngle`, `acceleration` |
-| `cbf` | 安全控制修正 | 自车状态、原始控制、障碍物 ego frame 状态 | `aSafe`, `deltaFSafe`, `feasible`, `activeNum`, `iterUsed` |
+| `cbfArbitration` | 安全控制修正 | 自车状态、原始控制、障碍物 ego frame 状态 | `aSafe`, `deltaFSafe`, `feasible`, `activeNum`, `iterUsed` |
 | `integration_sim` | 闭环仿真与可视化 | 场景配置 | CSV 轨迹、PNG 时域/空域图 |
 
 ### 2.2 关键设计决策
@@ -100,9 +100,9 @@ graph TD
 3. `mpcComputeCost` 内部调用 `predictBicycleState` 前向预测状态。
 4. 提取第一步控制量，经 `clampValue` 限幅后输出方向盘转角、前轮转角与加速度。
 
-### 3.2 cbf 模块逻辑
+### 3.2 cbfArbitration 模块逻辑
 
-![cbf 模块内部逻辑](images/cbf_logic.png)
+![cbfArbitration 模块内部逻辑](images/cbf_logic.png)
 
 ```mermaid
 graph TD
@@ -149,7 +149,7 @@ graph TD
 
 **坐标系：** 自车坐标系，x 向前为正，y 向左为正。
 
-### 4.2 cbf 接口
+### 4.2 cbfArbitration 接口
 
 **输入：**
 
@@ -171,9 +171,9 @@ graph TD
 
 ### 4.3 接口桥接要点
 
-- `waypointFollow` 输出的 `frontWheelAngle` 直接作为 `cbf` 的 `deltaFOriginal`。
-- `waypointFollow` 输出的 `acceleration` 直接作为 `cbf` 的 `aOriginal`。
-- `cbf` 输出 `deltaFSafe` 给自行车模型积分时同样为前轮转角，无需再除以 `steeringRatio`。
+- `waypointFollow` 输出的 `frontWheelAngle` 直接作为 `cbfArbitration` 的 `deltaFOriginal`。
+- `waypointFollow` 输出的 `acceleration` 直接作为 `cbfArbitration` 的 `aOriginal`。
+- `cbfArbitration` 输出 `deltaFSafe` 给自行车模型积分时同样为前轮转角，无需再除以 `steeringRatio`。
 
 ---
 
@@ -206,7 +206,7 @@ graph LR
 
 1. 仿真器按场景生成 6 个未来路点与自车初始状态。
 2. `waypointFollow` 输出目标前轮转角 `frontWheelAngle` 与纵向加速度 `acceleration`。
-3. `cbf` 将障碍物全局状态通过 `toEgoFrame` 转换到 ego frame，求解 HOCBF-QP。
+3. `cbfArbitration` 将障碍物全局状态通过 `toEgoFrame` 转换到 ego frame，求解 HOCBF-QP。
 4. 安全控制量输入自行车模型进行状态积分，得到下一时刻 ego 状态并闭环迭代。
 
 ---
@@ -324,7 +324,7 @@ cmake -B build
 cmake --build build
 ctest --test-dir build --output-on-failure
 
-cd ../cbf
+cd ../cbfArbitration
 cmake -B build
 cmake --build build
 ctest --test-dir build --output-on-failure

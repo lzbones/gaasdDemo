@@ -65,5 +65,5 @@ add_custom_target(run_integration_sim
   COMMAND integration_sim
   DEPENDS integration_sim
   WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-  COMMENT "Running waypointFollow + cbf integration simulation..."
+  COMMENT "Running waypointFollow + cbfArbitration integration simulation..."
 )

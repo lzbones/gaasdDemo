@@ -1,6 +1,6 @@
 # GAASD 自动驾驶安全控制演示工程
 
-本工程包含两个核心算法模块：**`waypointFollow`**（端到端路点跟踪 MPC 控制器）与 **`cbf`**（基于控制障碍函数的安全控制修正层），用于演示“感知-规划-控制-安全仲裁”闭环中的关键算法环节。
+本工程包含两个核心算法模块：**`waypointFollow`**（端到端路点跟踪 MPC 控制器）与 **`cbfArbitration`**（基于控制障碍函数的安全控制修正层），用于演示“感知-规划-控制-安全仲裁”闭环中的关键算法环节。
 
 ---
 
@@ -20,7 +20,7 @@ graph LR
 
     subgraph 控制层
         WF[waypointFollow<br/>路点跟踪 MPC]
-        CBF[cbf<br/>安全控制修正]
+        CBF[cbfArbitration<br/>安全控制修正]
     end
 
     subgraph 下游输出
@@ -38,7 +38,7 @@ graph LR
 ### 1.2 数据流说明
 
 1. **waypointFollow** 接收自车速度、当前方向盘转角和未来 3 秒的 6 个路点，输出目标方向盘转角、目标前轮转角和目标纵向加速度。
-2. **cbf** 接收自车状态、原始控制（前轮转角 + 加速度）和 ego frame 下的障碍物状态，求解 HOCBF-QP 后输出安全加速度 `aSafe` 和安全前轮转角 `deltaFSafe`。
+2. **cbfArbitration** 接收自车状态、原始控制（前轮转角 + 加速度）和 ego frame 下的障碍物状态，求解 HOCBF-QP 后输出安全加速度 `aSafe` 和安全前轮转角 `deltaFSafe`。
 3. 上层系统或仿真器将 `aSafe` / `deltaFSafe` 下发给车辆执行器。
 
 ### 1.3 目录结构
@@ -68,7 +68,7 @@ gaasdDemo/
 │   └── Readme.md                 # waypointFollow 模块详细文档
 │
 ├── test/                         # 跨模块集成测试
-│   └── integration_sim/          # waypointFollow + cbf 联合闭环仿真
+│   └── integration_sim/          # waypointFollow + cbfArbitration 联合闭环仿真
 │       ├── src/integration_sim.cpp
 │       ├── scripts/plot_scenarios.py
 │       ├── output/               # CSV + PNG 仿真结果
@@ -109,9 +109,9 @@ graph TD
 3. `mpcComputeCost` 计算 MPC 代价，内部调用 `predictBicycleState` 前向预测。
 4. 提取第一步控制量，经 `clampValue` 限幅后输出。
 
-### 2.2 cbf 模块逻辑
+### 2.2 cbfArbitration 模块逻辑
 
-![cbf 模块内部逻辑](doc/images/cbf_logic.png)
+![cbfArbitration 模块内部逻辑](doc/images/cbf_logic.png)
 
 ```mermaid
 graph TD
@@ -156,7 +156,7 @@ graph TD
 
 **坐标系：** 自车坐标系，x 向前为正，y 向左为正。
 
-### 3.2 cbf 接口
+### 3.2 cbfArbitration 接口
 
 **输入：** `EgoState` + `ObstacleState[]` + `CbfParam`
 
@@ -205,7 +205,7 @@ graph LR
 
 1. 仿真器按场景生成 6 个未来路点与自车初始状态。
 2. `waypointFollow` 输出目标前轮转角 `frontWheelAngle` 与纵向加速度 `acceleration`。
-3. `cbf` 将障碍物全局状态通过 `toEgoFrame` 转换到 ego frame，求解 HOCBF-QP。
+3. `cbfArbitration` 将障碍物全局状态通过 `toEgoFrame` 转换到 ego frame，求解 HOCBF-QP。
 4. 安全控制量输入自行车模型进行状态积分，得到下一时刻 ego 状态并闭环迭代。
 
 ---

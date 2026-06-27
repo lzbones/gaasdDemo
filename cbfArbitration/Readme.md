@@ -204,7 +204,7 @@ flowchart LR
 ### 6.2 构建
 
 ```bash
-cd cbf
+cd cbfArbitration
 cmake -S . -B build -DCMAKE_BUILD_TYPE=Debug
 cmake --build build -j
 ```
@@ -371,7 +371,7 @@ models/
 
 ```bash
 cmake --build build -j
-# 产物：libcbf_mbd.a（8 源 + 模板基类）
+# 产物：libcbf_arbitration_mbd.a（8 源 + 模板基类）
 ```
 
 ---
@@ -442,7 +442,7 @@ done
 | ComputeObstacleAffineConstraint | ![aff](tests/mbdTest/unit/ComputeObstacleAffineConstraint/output/ComputeObstacleAffineConstraint_response.png) |
 | ClampControlInput | ![clamp](tests/mbdTest/unit/ClampControlInput/output/ClampControlInput_response.png) |
 | SolveQpHildreth | ![qp](tests/mbdTest/unit/SolveQpHildreth/output/SolveQpHildreth_response.png) |
-| CbfControlRevision | ![cbf](tests/mbdTest/unit/CbfControlRevision/output/CbfControlRevision_response.png) |
+| CbfControlRevision | ![cbfArbitration](tests/mbdTest/unit/CbfControlRevision/output/CbfControlRevision_response.png) |
 
 ---
 

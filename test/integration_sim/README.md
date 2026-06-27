@@ -1,6 +1,6 @@
-# waypointFollow + cbf 集成仿真测试
+# waypointFollow + cbfArbitration 集成仿真测试
 
-本目录存放 `waypointFollow`（端到端路点跟踪 MPC 控制器）与 `cbf`（基于控制障碍函数的安全控制修正模块）的联合闭环仿真测试。
+本目录存放 `waypointFollow`（端到端路点跟踪 MPC 控制器）与 `cbfArbitration`（基于控制障碍函数的安全控制修正模块）的联合闭环仿真测试。
 
 ## 目录结构
 
@@ -44,16 +44,16 @@ python3 scripts/plot_scenarios.py
 ## 关键接口转换
 
 - `waypointFollow` 输出**方向盘转角** `steeringWheelAngle`、**前轮转角** `frontWheelAngle` 与**加速度** `acceleration`。
-- `frontWheelAngle` 直接作为 `cbf` 的 `deltaFOriginal`，无需再除以 `steeringRatio`。
-- `acceleration` 直接作为 `cbf` 的 `aOriginal`。
-- `cbf` 输出安全前轮转角 `deltaFSafe`，直接用于单车自行车模型推进。
-- 障碍物从全局坐标系通过 `toEgoFrame()` 转换到 ego frame 后输入 `cbf`。
+- `frontWheelAngle` 直接作为 `cbfArbitration` 的 `deltaFOriginal`，无需再除以 `steeringRatio`。
+- `acceleration` 直接作为 `cbfArbitration` 的 `aOriginal`。
+- `cbfArbitration` 输出安全前轮转角 `deltaFSafe`，直接用于单车自行车模型推进。
+- 障碍物从全局坐标系通过 `toEgoFrame()` 转换到 ego frame 后输入 `cbfArbitration`。
 
 ## 成功标准
 
 - 所有场景仿真成功生成 CSV。
 - 任意时刻自车与最近障碍物的距离 ≥ 安全半径 5 m。
-- 当存在碰撞风险时，`cbf` 输出的 `a_safe` 应小于 `waypointFollow` 原始 `acceleration`。
+- 当存在碰撞风险时，`cbfArbitration` 输出的 `a_safe` 应小于 `waypointFollow` 原始 `acceleration`。
 - 所有 QP 求解步骤 `feasible = true`。
 
 ## 仿真结果
